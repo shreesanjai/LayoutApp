@@ -6,4 +6,7 @@ export interface ShapeProps {
   strokeWidth?: number;
   borderRadius?: number;
   className?: string;
+  text?: string;
+  textColor?: string;
+  textSize?: number
 }

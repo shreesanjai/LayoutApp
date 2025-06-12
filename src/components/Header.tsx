@@ -9,7 +9,7 @@ import { useCanvasSettings } from '../context/CanvasSettingsContext';
 export default function Header() {
 
     const [showShapeOptions, setShowShapeOptions] = useState<boolean>(false);
-    const shapes: string[] = ['circle', 'square', 'triangle', 'rectangle', 'diamond', 'star'];
+    const shapes: string[] = ['circle', 'square', 'triangle', 'rectangle', 'diamond', 'star', 'text'];
 
     const toggleShapeOptions = () => {
         setShowShapeOptions((prev) => !prev);
@@ -137,7 +137,7 @@ export default function Header() {
                 </button>
             </div>
             {isEditingCanvas && (
-                <div className="absolute top-[13%] right-[14%] z-30 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-xl border dark:border-gray-700">
+                <div className="absolute top-[9%] right-[14.5%] z-30 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-xl border dark:border-gray-700">
                     <div className="space-y-4">
                         <div className="flex gap-2 items-center">
                             <input

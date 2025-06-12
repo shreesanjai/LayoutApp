@@ -1,37 +1,38 @@
 import React, { createContext, useContext, useState } from 'react';
 
-export interface Panel {
-  id: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  zIndex: number;
-  title: string;
-  shape: string;
-  moveEnabled: boolean;
-  editingEnabled: boolean;
-  style: Partial<{
-    fillColor: string;
-    strokeColor: string;
-    strokeWidth: number;
-    borderRadius: number;
-    fontColor: string;
-    fontSize: number;
-    fontWeight: "normal" | "bold";
-    fontStyle: "normal" | "italic";
-    textDecoration: "none" | "underline";
-    textAlign: "left" | "center" | "right";
-    boxShadow : string
-  }>;
+export interface PanelStyle {
+    fillColor?: string;
+    strokeColor?: string;
+    strokeWidth?: number;
+    borderRadius?: number;
+    fontColor?: string;
+    fontSize?: number;
+    fontWeight?: "normal" | "bold";
+    fontStyle?: "normal" | "italic";
+    textDecoration?: "none" | "underline";
+    boxShadow?: string;
 }
 
+export interface Panel {
+    id: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    zIndex: number;
+    shape: string;
+    moveEnabled: boolean;
+    editingEnabled: boolean;
+    style: PanelStyle;
+    title: string
+}
 
 interface PanelContextType {
     panels: Panel[];
     addPanel: (s: string) => void;
     clearPanels: () => void;
     removePanel: (id: string) => void;
+    addDuplicatePanel: (panelId: string) => void
     updatePanel: (
         id: string,
         updates: Partial<Omit<Panel, "id">> & {
@@ -46,45 +47,44 @@ export function PanelProvider({ children }: { children: React.ReactNode }) {
 
     const [panels, setPanels] = useState<Panel[]>([]);
 
-   const addPanel = (shape: string) => {
-  const canvas = document.querySelector('.canvas-container');
-  if (!canvas) return;
+    const addPanel = (shape: string) => {
+        const canvas = document.querySelector('.canvas-container');
+        if (!canvas) return;
 
-  const rect = canvas.getBoundingClientRect();
+        const rect = canvas.getBoundingClientRect();
 
-  const x = rect.width / 2 - 200; // Center horizontally (400 width / 2)
-  const y = rect.height / 2 - 200; // Center vertically (400 height / 2)
+        const x = rect.width / 2 - 200; // Center horizontally (400 width / 2)
+        const y = rect.height / 2 - 200; // Center vertically (400 height / 2)
 
-  const maxZIndex = panels.length > 0 ? Math.max(...panels.map(p => p.zIndex)) : 0;
+        const maxZIndex = panels.length > 0 ? Math.max(...panels.map(p => p.zIndex)) : 0;
 
-  const newPanel: Panel = {
-    id: crypto.randomUUID(),
-    x,
-    y,
-    width: 400,
-    height: 400,
-    zIndex: maxZIndex + 1,
-    title: '',
-    moveEnabled: true,
-    editingEnabled: true,
-    shape,
-    style: {
-      strokeColor: '#1e3a8a',
-      strokeWidth: 1,
-      borderRadius: 0,
-      fillColor: '#ffffff',
-      fontColor: '#000000',
-      fontSize: 16,
-      fontWeight: 'normal',
-      fontStyle: 'normal',
-      textDecoration: 'none',
-      textAlign: 'left',
-      boxShadow: '',
-    },
-  };
+        const newPanel: Panel = {
+            id: crypto.randomUUID(),
+            x,
+            y,
+            width: shape === 'text' ? 250 : 400,
+            height: shape === 'text' ? 100 : 400,
+            zIndex: maxZIndex + 1,
+            moveEnabled: true,
+            editingEnabled: true,
+            shape,
+            title: '',
+            style: {
+                strokeColor: '#1e3a8a',
+                strokeWidth: 1,
+                borderRadius: 0,
+                fillColor: '#ffffff',
+                fontColor: '#000000',
+                fontSize: 16,
+                fontWeight: 'normal',
+                fontStyle: 'normal',
+                textDecoration: 'none',
+                boxShadow: '',
+            },
+        };
 
-  setPanels(prev => [...prev, newPanel]);
-};
+        setPanels(prev => [...prev, newPanel]);
+    };
 
 
 
@@ -119,9 +119,52 @@ export function PanelProvider({ children }: { children: React.ReactNode }) {
     };
 
 
+    const addDuplicatePanel = (panelId: string) => {
+        const panel = panels.find((p) => panelId === p.id);
+        if (!panel) {
+            throw new Error("Panel not found");
+        }
+
+        const baseTitle = panel.title;
+        const similarPanelsCount = panels.filter(p => p.title.startsWith(baseTitle)).length;
+        const offset = 20;
+
+        const newPanel: Panel = {
+            id: crypto.randomUUID(),
+            x: panel.x + offset * similarPanelsCount,
+            y: panel.y + offset * similarPanelsCount,
+            width: panel.width,
+            height: panel.height,
+            zIndex: panel.zIndex + 1,
+            moveEnabled: true,
+            editingEnabled: true,
+            shape: panel.shape,
+            title: `${panel.title} Copy ${similarPanelsCount}`,
+            style: {
+                strokeColor: panel.style.strokeColor,
+                strokeWidth: panel.style.strokeWidth,
+                borderRadius: panel.style.borderRadius,
+                fillColor: panel.style.fillColor,
+                fontColor: panel.style.fontColor,
+                fontSize: panel.style.fontSize,
+                fontWeight: panel.style.fontWeight,
+                fontStyle: panel.style.fontStyle,
+                textDecoration: panel.style.textDecoration,
+                boxShadow: panel.style.boxShadow,
+            },
+        };
+
+        setPanels(prev => [...prev, newPanel]);
+    };
+
+
+
+
+
     return (
-        <PanelContext.Provider value={{ panels, addPanel, clearPanels, removePanel, updatePanel }} >{children}</PanelContext.Provider>
+        <PanelContext.Provider value={{ panels, addPanel, clearPanels, removePanel, updatePanel, addDuplicatePanel }} >{children}</PanelContext.Provider>
     );
+
 
 }
 
