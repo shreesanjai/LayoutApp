@@ -6,7 +6,6 @@ import usePanelIO from '../context/PanelIOContext';
 import { useCanvasSettings } from '../context/CanvasSettingsContext';
 
 
-
 export default function Header() {
 
     const [showShapeOptions, setShowShapeOptions] = useState<boolean>(false);
@@ -128,6 +127,13 @@ export default function Header() {
                         } text-white transition-colors`}
                 >
                     {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                </button>
+                <button
+                    className={`p-2 rounded-lg ${theme === 'dark'
+                        ? 'bg-yellow-600 hover:bg-yellow-700'
+                        : 'bg-blue-500 hover:bg-blue-600'
+                        } text-white transition-colors`}
+                >
                 </button>
             </div>
             {isEditingCanvas && (

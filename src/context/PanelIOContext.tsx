@@ -1,26 +1,8 @@
 import React, { createContext, useContext } from "react";
 import { useCanvasSettings } from "./CanvasSettingsContext";
-import { usePanel } from "./PanelContext";
+import { Panel, usePanel } from "./PanelContext";
 import html2canvas from "html2canvas";
 
-interface Panel {
-    id: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    zIndex: number;
-    title: string;
-    shape: string;
-    moveEnabled: boolean;
-    editingEnabled: boolean
-    style: {
-        fillColor: string
-        strokeColor: string,
-        strokeWidth: number,
-        borderRadius: number,
-    }
-}
 
 interface CanvasConfig {
     panels: Panel[];
