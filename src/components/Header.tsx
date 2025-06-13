@@ -128,13 +128,7 @@ export default function Header() {
                 >
                     {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
                 </button>
-                <button
-                    className={`p-2 rounded-lg ${theme === 'dark'
-                        ? 'bg-yellow-600 hover:bg-yellow-700'
-                        : 'bg-blue-500 hover:bg-blue-600'
-                        } text-white transition-colors`}
-                >
-                </button>
+            
             </div>
             {isEditingCanvas && (
                 <div className="absolute top-[9%] right-[14.5%] z-30 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-xl border dark:border-gray-700">

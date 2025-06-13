@@ -8,20 +8,20 @@ const Circle = ({
   strokeWidth = 1,
   className = '',
 }: ShapeProps) => {
-  const radius = Math.min(width, height) / 2;
-  
   return (
     <svg
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
       className={className}
+      preserveAspectRatio="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <circle
+      <ellipse
         cx={width / 2}
         cy={height / 2}
-        r={radius - strokeWidth / 2}
+        rx={(width - strokeWidth) / 2}
+        ry={(height - strokeWidth) / 2}
         fill={fill}
         stroke={stroke}
         strokeWidth={strokeWidth}

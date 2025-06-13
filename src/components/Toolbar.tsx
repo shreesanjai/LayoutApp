@@ -3,16 +3,18 @@ import {
   BoldIcon, ItalicIcon, UnderlineIcon, LayersIcon, MoveIcon, PaletteIcon,
   TypeIcon, LockIcon, UnlockIcon, SquareIcon, ChevronDownIcon, ChevronUpIcon,
   CopyIcon, Trash2Icon, ArrowUpIcon, ArrowDownIcon,
+  ClipboardCheck,
+  RotateCwIcon,
 } from 'lucide-react';
 import { HexColorPicker } from 'react-colorful';
-import { usePanel } from '../context/PanelContext';
+import { Panel, usePanel } from '../context/PanelContext';
 
 interface ToolbarProps {
   shapeType?: string;
   selectedPanelId: string;
 }
 
-const Toolbar: React.FC<ToolbarProps> = ({ shapeType = 'rectangle', selectedPanelId }) => {
+const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
   const { panels, updatePanel, removePanel, addDuplicatePanel } = usePanel();
   const panel = panels.find(p => p.id === selectedPanelId);
 
@@ -20,6 +22,10 @@ const Toolbar: React.FC<ToolbarProps> = ({ shapeType = 'rectangle', selectedPane
   const [openSections, setOpenSections] = useState<string[]>([]);
   const [colorType, setColorType] = useState<'font' | 'background' | 'border' | null>(null);
   const [colorInput, setColorInput] = useState('');
+  const [showRotateBox, setShowRotateBox] = useState(false);
+  const [copiedPanel, setCopiedPanel] = useState<Panel | null>(null);
+
+
 
   if (!panel) return null;
 
@@ -51,6 +57,42 @@ const Toolbar: React.FC<ToolbarProps> = ({ shapeType = 'rectangle', selectedPane
         : [...prev, section]
     );
   };
+
+  const bringForward = (panelId: string) => {
+    const sorted = [...panels].sort((a, b) => a.zIndex - b.zIndex);
+    const index = sorted.findIndex(p => p.id === panelId);
+    if (index === -1 || index === sorted.length - 1) return;
+
+    const current = sorted[index];
+    const next = sorted[index + 1];
+
+    updatePanel(current.id, { zIndex: next.zIndex });
+    updatePanel(next.id, { zIndex: current.zIndex });
+  };
+
+  const sendBackward = (panelId: string) => {
+    const sorted = [...panels].sort((a, b) => a.zIndex - b.zIndex);
+    const index = sorted.findIndex(p => p.id === panelId);
+    if (index <= 0) return;
+
+    const current = sorted[index];
+    const prev = sorted[index - 1];
+
+    updatePanel(current.id, { zIndex: prev.zIndex });
+    updatePanel(prev.id, { zIndex: current.zIndex });
+  };
+
+
+  const bringToFront = (panelId: string) => {
+    const maxZ = Math.max(...panels.map(p => p.zIndex));
+    updatePanel(panelId, { zIndex: maxZ + 1 });
+  };
+
+  const sendToBack = (panelId: string) => {
+    const minZ = Math.min(...panels.map(p => p.zIndex));
+    updatePanel(panelId, { zIndex: minZ - 1 });
+  };
+
 
   const isOpen = (section: string) => openSections.includes(section);
 
@@ -180,7 +222,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ shapeType = 'rectangle', selectedPane
 
             {isOpen('border') && (
               <div className="px-4 pb-4 space-y-3">
-                {shapeType === 'rectangle' && (
+                {(panel.shape === 'rectangle' || panel.shape === 'square') && (
                   <div>
                     <div className="flex justify-between mb-1">
                       <label className="text-sm">Radius</label>
@@ -334,23 +376,85 @@ const Toolbar: React.FC<ToolbarProps> = ({ shapeType = 'rectangle', selectedPane
 
             {isOpen('actions') && (
               <div className="px-4 pb-4 grid grid-cols-3 gap-2">
-                <button onClick={() => updatePanel(panel.id, { zIndex: 999 })} className="py-2 px-3 rounded-md bg-gray-100 dark:bg-gray-600 flex flex-col items-center justify-center gap-1">
+                <button
+                  onClick={() => bringToFront(panel.id)}
+                  className="py-2 px-3 rounded-md bg-gray-100 dark:bg-gray-600 flex flex-col items-center justify-center gap-1"
+                >
                   <ArrowUpIcon size={16} />
                   <span className="text-xs">Front</span>
                 </button>
-                <button onClick={() => updatePanel(panel.id, { zIndex: 1 })} className="py-2 px-3 rounded-md bg-gray-100 dark:bg-gray-600 flex flex-col items-center justify-center gap-1">
+
+                <button
+                  onClick={() => sendToBack(panel.id)}
+                  className="py-2 px-3 rounded-md bg-gray-100 dark:bg-gray-600 flex flex-col items-center justify-center gap-1"
+                >
                   <ArrowDownIcon size={16} />
                   <span className="text-xs">Back</span>
                 </button>
-                <button onClick={() => updateStyle({ boxShadow: boxShadow ? '' : '0 4px 8px rgba(0,0,0,0.2)' })} className={`py-2 px-3 rounded-md flex flex-col items-center justify-center gap-1 ${boxShadow ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' : 'bg-gray-100 dark:bg-gray-600'}`}>
-                  <LayersIcon size={16} />
-                  <span className="text-xs">Shadow</span>
+
+                <button
+                  onClick={() => bringForward(panel.id)}
+                  className="py-2 px-3 rounded-md bg-gray-100 dark:bg-gray-600 flex flex-col items-center justify-center gap-1"
+                >
+                  <ArrowUpIcon size={16} />
+                  <span className="text-xs">Bring Fwd</span>
                 </button>
-                <button onClick={() => updatePanel(panel.id, { moveEnabled: !moveEnabled })} className="py-2 px-3 rounded-md bg-gray-100 dark:bg-gray-600 flex flex-col items-center justify-center gap-1">
-                  {moveEnabled ? <UnlockIcon size={16} /> : <LockIcon size={16} />}
-                  <span className="text-xs">{moveEnabled ? 'Unlocked' : 'Locked'}</span>
+
+                <button
+                  onClick={() => sendBackward(panel.id)}
+                  className="py-2 px-3 rounded-md bg-gray-100 dark:bg-gray-600 flex flex-col items-center justify-center gap-1"
+                >
+                  <ArrowDownIcon size={16} />
+                  <span className="text-xs">Send Bwd</span>
                 </button>
-                <button onClick={() => addDuplicatePanel(selectedPanelId) } className="py-2 px-3 rounded-md bg-gray-100 dark:bg-gray-600 flex flex-col items-center justify-center gap-1">
+                <button
+                  onClick={() => setShowRotateBox(!showRotateBox)}
+                  className="py-2 px-3 rounded-md flex flex-col items-center justify-center gap-1 bg-gray-100 dark:bg-gray-600"
+                >
+                  <RotateCwIcon size={16} />
+                  <span className="text-xs">Rotate</span>
+                </button>
+                {showRotateBox && (
+                  <div className="absolute z-50 mt-2 p-3 rounded-lg bg-white dark:bg-gray-800 shadow-md border w-48 space-y-2 text-sm">
+                    <div className="text-gray-700 dark:text-gray-200">Rotate to:</div>
+                    <div className="flex gap-2">
+                      {[90, 180, 270].map((deg) => (
+                        <button
+                          key={deg}
+                          onClick={() => {
+                            updatePanel(panel.id, { rotation: deg });
+                            // setShowRotateBox(false);
+                          }}
+                          className="px-3 py-1 rounded-md bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
+                        >
+                          {deg}°
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500">Custom:</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={360}
+                        defaultValue={panel.rotation || 0}
+                        className="w-16 p-1 rounded border dark:bg-gray-700 dark:text-white"
+                        onBlur={(e) => {
+                          const deg = parseInt(e.target.value || "0");
+                          updatePanel(panel.id, { rotation: deg });
+                        }}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Current: {panel.rotation || 0}°
+                    </div>
+                  </div>
+                )}
+                <button onClick={() => updatePanel(panel.id, { isLocked: !panel.isLocked })} className="py-2 px-3 rounded-md bg-gray-100 dark:bg-gray-600 flex flex-col items-center justify-center gap-1">
+                  {!panel.isLocked ? <LockIcon size={16} /> : <UnlockIcon size={16} />}
+                  <span className="text-xs">{!panel.isLocked ? 'Lock' : 'Unlock'}</span>
+                </button>
+                <button onClick={() => addDuplicatePanel(selectedPanelId, false)} className="py-2 px-3 rounded-md bg-gray-100 dark:bg-gray-600 flex flex-col items-center justify-center gap-1">
                   <CopyIcon size={16} />
                   <span className="text-xs">Duplicate</span>
                 </button>
@@ -358,8 +462,29 @@ const Toolbar: React.FC<ToolbarProps> = ({ shapeType = 'rectangle', selectedPane
                   <Trash2Icon size={16} />
                   <span className="text-xs">Delete</span>
                 </button>
+                <button
+                  onClick={() => {
+                    const panelToCopy = panels.find(p => p.id === selectedPanelId);
+                    if (panelToCopy) {
+                      setCopiedPanel(panel);
+                    }
+                  }}
+                  className="py-2 px-3 rounded-md bg-gray-100 dark:bg-gray-600 flex flex-col items-center justify-center gap-1"
+                >
+                  <CopyIcon size={16} />
+                  <span className="text-xs">Copy</span>
+                </button>
+                <button onClick={()=>{
+                  if(copiedPanel){
+                    addDuplicatePanel(copiedPanel.id, true)
+                  }
+                }}>
+                  <ClipboardCheck />
+                </button>
+
               </div>
             )}
+
           </div>
         </div>
       )}
