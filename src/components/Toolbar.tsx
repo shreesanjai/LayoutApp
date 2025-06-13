@@ -34,7 +34,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
 
   const {
     style,
-    width, height, moveEnabled, shape,
+    width, height,  shape,
   } = panel;
 
   const {
@@ -47,7 +47,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
     textDecoration = 'none',
     borderRadius = 0,
     strokeWidth = 1,
-    boxShadow = '',
+    // boxShadow = '',
   } = style;
 
   const toggleSection = (section: string) => {

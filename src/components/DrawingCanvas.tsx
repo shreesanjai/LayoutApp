@@ -12,7 +12,7 @@ import { Panel, usePanel } from '../context/PanelContext';
 import { useCanvasSettings } from '../context/CanvasSettingsContext';
 import Toolbar from './Toolbar';
 import Text from './Common/Shapes/Text'
-import { transform } from 'html2canvas/dist/types/css/property-descriptors/transform';
+
 
 
 
