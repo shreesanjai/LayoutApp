@@ -11,21 +11,27 @@ const Star = ({
 }: ShapeProps & { points?: number }) => {
   const centerX = width / 2;
   const centerY = height / 2;
-  const outerRadius = Math.min(width, height) / 2;
-  const innerRadius = outerRadius * 0.4;
-  
+
+  const outerRadiusX = width / 2;
+  const outerRadiusY = height / 2;
+  const innerRadiusX = outerRadiusX * 0.4;
+  const innerRadiusY = outerRadiusY * 0.4;
+
   const getStarPoints = () => {
     const angleStep = Math.PI / points;
     let pointsString = '';
-    
+
     for (let i = 0; i < points * 2; i++) {
-      const radius = i % 2 === 0 ? outerRadius : innerRadius;
+      const isOuter = i % 2 === 0;
+      const radiusX = isOuter ? outerRadiusX : innerRadiusX;
+      const radiusY = isOuter ? outerRadiusY : innerRadiusY;
+
       const angle = i * angleStep - Math.PI / 2;
-      const x = centerX + radius * Math.cos(angle);
-      const y = centerY + radius * Math.sin(angle);
+      const x = centerX + radiusX * Math.cos(angle);
+      const y = centerY + radiusY * Math.sin(angle);
       pointsString += `${x},${y} `;
     }
-    
+
     return pointsString.trim();
   };
 
