@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 
 export interface PanelStyle {
     fillColor?: string;
@@ -11,6 +11,7 @@ export interface PanelStyle {
     fontStyle?: "normal" | "italic";
     textDecoration?: "none" | "underline";
     boxShadow?: string;
+    strokeStyle? : string;
 }
 
 export interface Panel {
@@ -21,12 +22,12 @@ export interface Panel {
     height: number;
     zIndex: number;
     shape: string;
-    moveEnabled: boolean;
     editingEnabled: boolean;
     rotation: number;
     style: PanelStyle;
-    title: string
+    title: string;
     isLocked: boolean;
+    lockAspectRatio:boolean;
 }
 
 interface PanelContextType {
@@ -34,30 +35,62 @@ interface PanelContextType {
     addPanel: (s: string) => void;
     clearPanels: () => void;
     removePanel: (id: string) => void;
-    addDuplicatePanel: (panelId: string, copiedPanel: boolean) => void
+    addDuplicatePanel: (panelId: string, copiedPanel: boolean) => void;
     updatePanel: (
         id: string,
         updates: Partial<Omit<Panel, "id">> & {
             style?: Partial<Panel["style"]>;
         }
     ) => void;
+    updatePanelSilently: (panelId: string, updates: Partial<Omit<Panel, "id">> & {
+        style?: Partial<Panel["style"]>;
+    }) => void;
+    setPanels: (panels: Panel[]) => void;
+    canUndo: boolean;
+    canRedo: boolean;
+    undo: () => void;
+    redo: () => void;
 }
 
 const PanelContext = createContext<PanelContextType | undefined>(undefined);
 
 export function PanelProvider({ children }: { children: React.ReactNode }) {
-
     const [panels, setPanels] = useState<Panel[]>([]);
+    const [history, setHistory] = useState<{
+        past: Panel[][];
+        present: Panel[];
+        future: Panel[][];
+    }>({
+        past: [],
+        present: [],
+        future: [],
+    });
 
-    const addPanel = (shape: string) => {
+
+    const updateHistory = useCallback((newPanels: Panel[]) => {
+        setHistory(prev => {
+            return {
+                past: [prev.present, ...prev.past].slice(0, 100), // Limit to 100 undo steps
+                present: newPanels,
+                future: [], // Clear redo stack when making new changes
+            };
+        });
+    }, []);
+
+    // Wrap setPanels to automatically update history
+    const setPanelsWithHistory = useCallback((newPanels: Panel[]) => {
+        setPanels(newPanels);
+        updateHistory(newPanels);
+    }, [updateHistory]);
+
+    // All panel operations should use setPanelsWithHistory instead of setPanels directly
+    const addPanel = useCallback((shape: string) => {
         const canvas = document.querySelector('.canvas-container');
         if (!canvas) return;
 
         const rect = canvas.getBoundingClientRect();
-
-        const x = rect.width / 2 - 200; // Center horizontally (400 width / 2)
-        const y = rect.height / 2 - 200; // Center vertically (400 height / 2)
-
+        const x = rect.width / 2 - 200;
+        const y = rect.height / 2 - 200;
         const maxZIndex = panels.reduce((max, p) => Math.max(max, p.zIndex), 0);
 
         const newPanel: Panel = {
@@ -68,7 +101,6 @@ export function PanelProvider({ children }: { children: React.ReactNode }) {
             height: (shape === 'text' || shape === 'rectangle') ? 100 : 400,
             zIndex: maxZIndex + 1,
             rotation: 0,
-            moveEnabled: true,
             editingEnabled: true,
             shape,
             isLocked: false,
@@ -84,31 +116,31 @@ export function PanelProvider({ children }: { children: React.ReactNode }) {
                 fontStyle: 'normal',
                 textDecoration: 'none',
                 boxShadow: '',
+                strokeStyle : ''
             },
+            lockAspectRatio:false,
+
         };
 
-        setPanels(prev => [...prev, newPanel]);
-    };
+        setPanelsWithHistory([...panels, newPanel]);
+    }, [panels, setPanelsWithHistory]);
 
+    const clearPanels = useCallback(() => {
+        setPanelsWithHistory([]);
+    }, [setPanelsWithHistory]);
 
+    const removePanel = useCallback((id: string) => {
+        setPanelsWithHistory(panels.filter(panel => panel.id !== id));
+    }, [panels, setPanelsWithHistory]);
 
-    const clearPanels = () => {
-        setPanels([]);
-    };
-
-    const removePanel = (id: string) => {
-        setPanels(prev => prev.filter(panel => panel.id !== id));
-    };
-
-    const updatePanel = (
+    const updatePanel = useCallback((
         id: string,
         updates: Partial<Omit<Panel, "id">> & {
             style?: Partial<Panel["style"]>;
         }
     ) => {
-        console.log(updates)
-        setPanels(prev =>
-            prev.map(panel =>
+        setPanelsWithHistory(
+            panels.map(panel =>
                 panel.id === id
                     ? {
                         ...panel,
@@ -120,17 +152,15 @@ export function PanelProvider({ children }: { children: React.ReactNode }) {
                     }
                     : panel
             )
-        );
-    };
+        )
+    }, [panels, setPanelsWithHistory]);
 
-
-    const addDuplicatePanel = (panelId: string, copiedPanel: boolean ) => {
+    const addDuplicatePanel = useCallback((panelId: string, copiedPanel: boolean) => {
         const panel = panels.find((p) => panelId === p.id);
         if (!panel) throw new Error("Panel not found");
 
         const baseTitle = panel.title;
         const similarPanelsCount = panels.filter(p => p.title.startsWith(baseTitle)).length;
-
         const offset = copiedPanel ? 10 : 20 * similarPanelsCount;
 
         const newPanel: Panel = {
@@ -141,7 +171,6 @@ export function PanelProvider({ children }: { children: React.ReactNode }) {
             height: panel.height,
             zIndex: panel.zIndex + 1,
             rotation: panel.rotation,
-            moveEnabled: true,
             editingEnabled: true,
             shape: panel.shape,
             isLocked: panel.isLocked,
@@ -158,27 +187,92 @@ export function PanelProvider({ children }: { children: React.ReactNode }) {
                 textDecoration: panel.style.textDecoration,
                 boxShadow: panel.style.boxShadow,
             },
+            lockAspectRatio:panel.lockAspectRatio,
         };
 
-        setPanels(prev => [...prev, newPanel]);
+        setPanelsWithHistory([...panels, newPanel]);
+    }, [panels, setPanelsWithHistory]);
+
+    const undo = useCallback(() => {
+        setHistory(prev => {
+            if (prev.past.length === 0) return prev;
+
+            const [newPresent, ...newPast] = prev.past;
+            return {
+                past: newPast,
+                present: newPresent,
+                future: [prev.present, ...prev.future],
+            };
+        });
+
+        if (history.past.length > 0) {
+            setPanels(history.past[0]);
+        }
+    }, [history.past]);
+
+    const updatePanelSilently = (
+        id: string,
+        updates: Partial<Omit<Panel, "id">> & {
+            style?: Partial<Panel["style"]>;
+        }
+    ) => {
+        setPanels(prevPanels =>
+            prevPanels.map(panel =>
+                panel.id === id
+                    ? {
+                        ...panel,
+                        ...updates,
+                        style: {
+                            ...panel.style,
+                            ...updates.style,
+                        },
+                    }
+                    : panel
+            )
+        );
     };
 
+    const redo = useCallback(() => {
+        setHistory(prev => {
+            if (prev.future.length === 0) return prev;
 
+            const [newPresent, ...newFuture] = prev.future;
+            return {
+                past: [prev.present, ...prev.past],
+                present: newPresent,
+                future: newFuture,
+            };
+        });
 
-
-
+        if (history.future.length > 0) {
+            setPanels(history.future[0]);
+        }
+    }, [history.future]);
 
     return (
-        <PanelContext.Provider value={{ panels, addPanel, clearPanels, removePanel, updatePanel, addDuplicatePanel }} >{children}</PanelContext.Provider>
+        <PanelContext.Provider value={{
+            panels,
+            addPanel,
+            clearPanels,
+            removePanel,
+            updatePanel,
+            addDuplicatePanel,
+            setPanels: setPanelsWithHistory,
+            canUndo: history.past.length > 0,
+            canRedo: history.future.length > 0,
+            undo,
+            redo,
+            updatePanelSilently
+        }}>
+            {children}
+        </PanelContext.Provider>
     );
-
-
 }
 
 export function usePanel() {
     const context = useContext(PanelContext);
     if (context === undefined) {
-        throw new Error('useTheme must be used within a ThemeProvider');
+        throw new Error('usePanel must be used within a PanelProvider');
     }
     return context;
 }

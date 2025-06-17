@@ -14,3 +14,13 @@
   right: 0;
   cursor: se-resize;
 }
+
+/* In your CSS file or style block */
+.rnd-rotate-center {
+  transform-origin: center center !important;
+}
+
+@keyframes blink {
+  from, to { opacity: 1; }
+  50% { opacity: 0; }
+}
