@@ -1,4 +1,5 @@
 import { ShapeProps } from "../../../tyeps";
+import { getStrokeStyle } from "../../../utils/strokeStyleUtil";
 
 const Square = ({
   width = 100,
@@ -8,17 +9,12 @@ const Square = ({
   strokeWidth = 1,
   borderRadius = 0,
   className = '',
-  text = '',
-  textColor = 'black',
-  textSize = 16,
   strokeStyle = 'solid',  // Add strokeStyle here
 }: ShapeProps) => {
-  
+
   const rx = Math.min(borderRadius, Math.min(width, height) / 2);
-  
-  // Set stroke based on the strokeStyle prop
-  const strokeDashArray = strokeStyle === 'dashed' ? '4,2' : strokeStyle === 'dotted' ? '1,2' : '0';  // Solid line as default
-  
+
+
   return (
     <svg
       width={width}
@@ -35,23 +31,10 @@ const Square = ({
         fill={fill}
         stroke={stroke}
         strokeWidth={strokeWidth}
-        strokeDasharray={strokeDashArray}  // Apply stroke style
+        strokeDasharray={getStrokeStyle(strokeStyle, strokeWidth)}
+        strokeLinecap={strokeStyle == "dotted" ? 'round' : 'square'}  // Apply stroke style
+
       />
-      
-      {/* Text centered inside the SVG */}
-      {text && (
-        <text
-          x="50%" 
-          y="50%" 
-          dominantBaseline="middle" 
-          textAnchor="middle" 
-          fill={textColor}
-          fontSize={textSize}
-          fontFamily="Arial, sans-serif"
-        >
-          {text}
-        </text>
-      )}
     </svg>
   );
 };

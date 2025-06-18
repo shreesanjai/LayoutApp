@@ -9,5 +9,6 @@ export interface ShapeProps {
   text?: string;
   textColor?: string;
   textSize?: number;
-  strokeStyle : string;
+  textStye? : string;
+  strokeStyle? : string;
 }

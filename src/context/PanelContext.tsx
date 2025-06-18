@@ -1,17 +1,18 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 export interface PanelStyle {
     fillColor?: string;
     strokeColor?: string;
     strokeWidth?: number;
-    borderRadius?: number;
-    fontColor?: string;
     fontSize?: number;
     fontWeight?: "normal" | "bold";
     fontStyle?: "normal" | "italic";
     textDecoration?: "none" | "underline";
     boxShadow?: string;
-    strokeStyle? : string;
+    strokeStyle?: string;
+    borderRadius?: number;
+    fontColor?: string;
+    textAlign? : 'center' | 'left' | 'right';
 }
 
 export interface Panel {
@@ -22,69 +23,49 @@ export interface Panel {
     height: number;
     zIndex: number;
     shape: string;
+    moveEnabled: boolean;
     editingEnabled: boolean;
     rotation: number;
     style: PanelStyle;
     title: string;
     isLocked: boolean;
-    lockAspectRatio:boolean;
+    lockAspectRatio: boolean;
 }
 
 interface PanelContextType {
     panels: Panel[];
-    addPanel: (s: string) => void;
+    addPanel: (shape: string) => void;
     clearPanels: () => void;
     removePanel: (id: string) => void;
-    addDuplicatePanel: (panelId: string, copiedPanel: boolean) => void;
+    addDuplicatePanel: (id: string, copied: boolean) => void;
     updatePanel: (
         id: string,
-        updates: Partial<Omit<Panel, "id">> & {
-            style?: Partial<Panel["style"]>;
-        }
+        updates: Partial<Omit<Panel, "id">> & { style?: Partial<PanelStyle> }
     ) => void;
-    updatePanelSilently: (panelId: string, updates: Partial<Omit<Panel, "id">> & {
-        style?: Partial<Panel["style"]>;
-    }) => void;
-    setPanels: (panels: Panel[]) => void;
-    canUndo: boolean;
-    canRedo: boolean;
+    updatePanelSilently: (
+        id: string,
+        updates: Partial<Omit<Panel, "id">> & { style?: Partial<PanelStyle> }
+    ) => void;
     undo: () => void;
     redo: () => void;
+    canUndo: boolean;
+    canRedo: boolean;
+    setPanels: (newPanels: Panel[]) => void;
 }
 
 const PanelContext = createContext<PanelContextType | undefined>(undefined);
 
-export function PanelProvider({ children }: { children: React.ReactNode }) {
+export const PanelProvider = ({ children }: { children: React.ReactNode }) => {
     const [panels, setPanels] = useState<Panel[]>([]);
-    const [history, setHistory] = useState<{
-        past: Panel[][];
-        present: Panel[];
-        future: Panel[][];
-    }>({
-        past: [],
-        present: [],
-        future: [],
-    });
+    const [history, setHistory] = useState<Panel[][]>([]);
+    const [future, setFuture] = useState<Panel[][]>([]);
 
+    const pushToHistory = () => {
+        setHistory(prev => [...prev, panels.map(p => ({ ...p, style: { ...p.style } }))]);
+        setFuture([]);
+    };
 
-    const updateHistory = useCallback((newPanels: Panel[]) => {
-        setHistory(prev => {
-            return {
-                past: [prev.present, ...prev.past].slice(0, 100), // Limit to 100 undo steps
-                present: newPanels,
-                future: [], // Clear redo stack when making new changes
-            };
-        });
-    }, []);
-
-    // Wrap setPanels to automatically update history
-    const setPanelsWithHistory = useCallback((newPanels: Panel[]) => {
-        setPanels(newPanels);
-        updateHistory(newPanels);
-    }, [updateHistory]);
-
-    // All panel operations should use setPanelsWithHistory instead of setPanels directly
-    const addPanel = useCallback((shape: string) => {
+    const addPanel = (shape: string) => {
         const canvas = document.querySelector('.canvas-container');
         if (!canvas) return;
 
@@ -94,53 +75,45 @@ export function PanelProvider({ children }: { children: React.ReactNode }) {
         const maxZIndex = panels.reduce((max, p) => Math.max(max, p.zIndex), 0);
 
         const newPanel: Panel = {
-            id: crypto.randomUUID(),
+            id: Date.now().toString(),
             x,
             y,
-            width: shape === 'text' ? 250 : 400,
+            width: 400,
             height: (shape === 'text' || shape === 'rectangle') ? 100 : 400,
             zIndex: maxZIndex + 1,
             rotation: 0,
+            moveEnabled: true,
             editingEnabled: true,
             shape,
+            title: `${shape}`,
             isLocked: false,
-            title: '',
+            lockAspectRatio: false,
             style: {
-                strokeColor: '#1e3a8a',
-                strokeWidth: 1,
-                borderRadius: 0,
-                fillColor: 'transparent',
-                fontColor: '#000000',
+                fillColor: '#ffffff',
+                strokeColor: '#000000',
+                strokeWidth: 2,
                 fontSize: 16,
                 fontWeight: 'normal',
                 fontStyle: 'normal',
                 textDecoration: 'none',
                 boxShadow: '',
-                strokeStyle : ''
-            },
-            lockAspectRatio:false,
-
+                strokeStyle: '',
+                borderRadius: 0,
+                fontColor: 'black'
+            }
         };
 
-        setPanelsWithHistory([...panels, newPanel]);
-    }, [panels, setPanelsWithHistory]);
+        pushToHistory();
+        setPanels(prev => [...prev, newPanel]);
+    };
 
-    const clearPanels = useCallback(() => {
-        setPanelsWithHistory([]);
-    }, [setPanelsWithHistory]);
-
-    const removePanel = useCallback((id: string) => {
-        setPanelsWithHistory(panels.filter(panel => panel.id !== id));
-    }, [panels, setPanelsWithHistory]);
-
-    const updatePanel = useCallback((
+    const updatePanel = (
         id: string,
-        updates: Partial<Omit<Panel, "id">> & {
-            style?: Partial<Panel["style"]>;
-        }
+        updates: Partial<Omit<Panel, "id">> & { style?: Partial<PanelStyle> }
     ) => {
-        setPanelsWithHistory(
-            panels.map(panel =>
+        pushToHistory();
+        setPanels(prev =>
+            prev.map(panel =>
                 panel.id === id
                     ? {
                         ...panel,
@@ -148,131 +121,107 @@ export function PanelProvider({ children }: { children: React.ReactNode }) {
                         style: {
                             ...panel.style,
                             ...updates.style,
-                        },
-                    }
-                    : panel
-            )
-        )
-    }, [panels, setPanelsWithHistory]);
-
-    const addDuplicatePanel = useCallback((panelId: string, copiedPanel: boolean) => {
-        const panel = panels.find((p) => panelId === p.id);
-        if (!panel) throw new Error("Panel not found");
-
-        const baseTitle = panel.title;
-        const similarPanelsCount = panels.filter(p => p.title.startsWith(baseTitle)).length;
-        const offset = copiedPanel ? 10 : 20 * similarPanelsCount;
-
-        const newPanel: Panel = {
-            id: crypto.randomUUID(),
-            x: panel.x + offset,
-            y: panel.y + offset,
-            width: panel.width,
-            height: panel.height,
-            zIndex: panel.zIndex + 1,
-            rotation: panel.rotation,
-            editingEnabled: true,
-            shape: panel.shape,
-            isLocked: panel.isLocked,
-            title: `${panel.title} Copy ${similarPanelsCount}`,
-            style: {
-                strokeColor: panel.style.strokeColor,
-                strokeWidth: panel.style.strokeWidth,
-                borderRadius: panel.style.borderRadius,
-                fillColor: panel.style.fillColor,
-                fontColor: panel.style.fontColor,
-                fontSize: panel.style.fontSize,
-                fontWeight: panel.style.fontWeight,
-                fontStyle: panel.style.fontStyle,
-                textDecoration: panel.style.textDecoration,
-                boxShadow: panel.style.boxShadow,
-            },
-            lockAspectRatio:panel.lockAspectRatio,
-        };
-
-        setPanelsWithHistory([...panels, newPanel]);
-    }, [panels, setPanelsWithHistory]);
-
-    const undo = useCallback(() => {
-        setHistory(prev => {
-            if (prev.past.length === 0) return prev;
-
-            const [newPresent, ...newPast] = prev.past;
-            return {
-                past: newPast,
-                present: newPresent,
-                future: [prev.present, ...prev.future],
-            };
-        });
-
-        if (history.past.length > 0) {
-            setPanels(history.past[0]);
-        }
-    }, [history.past]);
-
-    const updatePanelSilently = (
-        id: string,
-        updates: Partial<Omit<Panel, "id">> & {
-            style?: Partial<Panel["style"]>;
-        }
-    ) => {
-        setPanels(prevPanels =>
-            prevPanels.map(panel =>
-                panel.id === id
-                    ? {
-                        ...panel,
-                        ...updates,
-                        style: {
-                            ...panel.style,
-                            ...updates.style,
-                        },
+                        }
                     }
                     : panel
             )
         );
     };
 
-    const redo = useCallback(() => {
-        setHistory(prev => {
-            if (prev.future.length === 0) return prev;
+    const updatePanelSilently = (
+        id: string,
+        updates: Partial<Omit<Panel, "id">> & { style?: Partial<PanelStyle> }
+    ) => {
+        setPanels(prev =>
+            prev.map(panel =>
+                panel.id === id
+                    ? {
+                        ...panel,
+                        ...updates,
+                        style: {
+                            ...panel.style,
+                            ...updates.style,
+                        }
+                    }
+                    : panel
+            )
+        );
+    };
 
-            const [newPresent, ...newFuture] = prev.future;
-            return {
-                past: [prev.present, ...prev.past],
-                present: newPresent,
-                future: newFuture,
-            };
-        });
+    const removePanel = (id: string) => {
+        pushToHistory();
+        setPanels(prev => prev.filter(panel => panel.id !== id));
+    };
 
-        if (history.future.length > 0) {
-            setPanels(history.future[0]);
-        }
-    }, [history.future]);
+    const clearPanels = () => {
+        pushToHistory();
+        setPanels([]);
+    };
+
+    const addDuplicatePanel = (panelId: string, copied: boolean) => {
+        const panel = panels.find(p => p.id === panelId);
+        if (!panel) return;
+
+        const similarCount = panels.filter(p => p.title.startsWith(panel.title)).length;
+        const offset = copied ? 10 : 20 * similarCount;
+
+        const newPanel: Panel = {
+            ...panel,
+            id: Date.now().toString(),
+            x: panel.x + offset,
+            y: panel.y + offset,
+            zIndex: panel.zIndex + 1,
+            title: `${panel.title} Copy`
+        };
+
+        pushToHistory();
+        setPanels(prev => [...prev, newPanel]);
+    };
+
+    const undo = () => {
+        if (history.length === 0) return;
+        const previous = history[history.length - 1];
+        setHistory(prev => prev.slice(0, prev.length - 1));
+        setFuture(prev => [panels, ...prev]);
+        setPanels(previous);
+    };
+
+    const redo = () => {
+        if (future.length === 0) return;
+        const next = future[0];
+        setFuture(prev => prev.slice(1));
+        setHistory(prev => [...prev, panels]);
+        setPanels(next);
+    };
+
+    const setPanelsDirect = (newPanels: Panel[]) => {
+        setPanels(newPanels);
+    };
 
     return (
-        <PanelContext.Provider value={{
-            panels,
-            addPanel,
-            clearPanels,
-            removePanel,
-            updatePanel,
-            addDuplicatePanel,
-            setPanels: setPanelsWithHistory,
-            canUndo: history.past.length > 0,
-            canRedo: history.future.length > 0,
-            undo,
-            redo,
-            updatePanelSilently
-        }}>
+        <PanelContext.Provider
+            value={{
+                panels,
+                addPanel,
+                clearPanels,
+                removePanel,
+                updatePanel,
+                updatePanelSilently,
+                addDuplicatePanel,
+                undo,
+                redo,
+                canUndo: history.length > 0,
+                canRedo: future.length > 0,
+                setPanels: setPanelsDirect
+            }}
+        >
             {children}
         </PanelContext.Provider>
     );
-}
+};
 
-export function usePanel() {
+export const usePanel = () => {
     const context = useContext(PanelContext);
-    if (context === undefined) {
-        throw new Error('usePanel must be used within a PanelProvider');
-    }
+    if (!context) throw new Error('usePanel must be used within a PanelProvider');
     return context;
-}
+};

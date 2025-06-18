@@ -20,15 +20,14 @@ export default function DrawingCanvas() {
     removePanel,
     updatePanel,
     addDuplicatePanel,
-    undo,
-    redo
   } = usePanel();
   const { canvasWidth, canvasHeight, canvasFgColor, canvasBgColor, roundedCorners, showGrid } = useCanvasSettings();
 
   const [singleSelectedPanel, setSingleSelectedPanel] = useState<string>('');
   const [copiedPanel, setCopiedPanel] = useState<Panel | null>(null);
   const [shiftKeyPressed, setShiftKeyPressed] = useState<boolean>(false);
-  const { updatePanelSilently } = usePanel();
+  const { updatePanelSilently, undo, redo } = usePanel();
+  const [isReadOnly, setIsReadOnly] = useState<boolean>(true);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -43,8 +42,7 @@ export default function DrawingCanvas() {
       if (ctrlOrCmd) {
         switch (e.key.toLowerCase()) {
           case 'z':
-            if (e.shiftKey) redo();
-            else undo();
+            undo();
             e.preventDefault();
             break;
           case 'y':
@@ -76,7 +74,7 @@ export default function DrawingCanvas() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [singleSelectedPanel, panels, copiedPanel, removePanel, addDuplicatePanel, undo, redo]);
+  }, [singleSelectedPanel, panels, copiedPanel, removePanel, addDuplicatePanel,]);
 
   const handlePanelClick = (e: React.MouseEvent, panelId: string) => {
     e.stopPropagation();
@@ -95,6 +93,8 @@ export default function DrawingCanvas() {
     updatePanel(currentPanel.id, { editingEnabled: true });
   }
 
+
+
   const getShapeProps = (panel: Panel) => ({
     width: panel.width,
     height: panel.height,
@@ -106,7 +106,7 @@ export default function DrawingCanvas() {
     borderRadius: panel.style.borderRadius || 0,
     text: panel.title || '',
     transform: `rotate(${panel.rotation}deg)`,
-    strokeStyle : panel.str
+    strokeStyle: panel.style.strokeStyle
   });
 
   return (
@@ -137,7 +137,7 @@ export default function DrawingCanvas() {
                 const isSelected = singleSelectedPanel === panel.id;
                 const isUnlockedAndSelected = !panel.isLocked && singleSelectedPanel === panel.id;
                 return (
-                  
+
                   <Rnd
                     key={panel.id}
                     default={{
@@ -174,7 +174,7 @@ export default function DrawingCanvas() {
                     }}
                     onClick={(e: React.MouseEvent<Element, MouseEvent>) => handlePanelClick(e, panel.id)}
                     style={{
-                      zIndex: isSelected ? 1000 : panel.zIndex, 
+                      zIndex: isSelected ? 1000 : panel.zIndex,
                       transform: `rotate(${panel.rotation || 0}deg)`,
                       border: singleSelectedPanel == panel.id ? '2px dashed #3b82f6' : 'none',
                       backgroundColor: 'transparent',
@@ -204,8 +204,41 @@ export default function DrawingCanvas() {
                       {panel.shape === 'square' && <Square {...getShapeProps(panel)} />}
                       {panel.shape === 'text' && <Text panel={panel} {...getShapeProps(panel)} />}
                       {panel.editingEnabled && (
-                        <div className="w-[40%] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" >
-                          {panel.shape}
+                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full bg-transparent">
+                          <textarea
+                            onDoubleClick={(e) => {
+                              e.stopPropagation();
+                              setIsReadOnly(false);
+                            }}
+                            onBlur={() => setIsReadOnly(true)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                (e.target as HTMLTextAreaElement).blur();
+                              }
+                            }}
+                            readOnly={isReadOnly}
+                            value={panel.title}
+                            onChange={(e) => updatePanel(panel.id, { title: e.target.value })}
+                            className={`
+      w-full min-w-[40px] min-h-[40px] p-1 text-center resize-none
+      bg-transparent border border-transparent focus:border-none
+      focus:outline-none 
+      ${isReadOnly ? 'cursor-pointer' : 'cursor-text'}
+    `}
+                            style={{
+                              fontSize: `${panel.style.fontSize}px`,
+                              fontFamily: 'inherit',
+                              fontWeight: panel.style.fontWeight,
+                              fontStyle: panel.style.fontStyle,
+                              textDecoration: panel.style.textDecoration,
+                              color: panel.style.fontColor,
+                              lineHeight: '1.2',
+                              overflow: 'hidden',
+                              textAlign: panel.style.textAlign || 'center',
+                            }}
+                            spellCheck={true}
+                          />
                         </div>
                       )}
                     </div>

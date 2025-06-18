@@ -1,4 +1,5 @@
 import { ShapeProps } from "../../../tyeps";
+import { getStrokeStyle } from "../../../utils/strokeStyleUtil";
 
 const Star = ({
   width = 100,
@@ -8,6 +9,7 @@ const Star = ({
   strokeWidth = 1,
   points = 5,
   className = '',
+  strokeStyle = ''
 }: ShapeProps & { points?: number }) => {
   const centerX = width / 2;
   const centerY = height / 2;
@@ -49,6 +51,8 @@ const Star = ({
         stroke={stroke}
         strokeWidth={strokeWidth}
         strokeLinejoin="round"
+        strokeDasharray={getStrokeStyle(strokeStyle, strokeWidth)}
+        strokeLinecap={strokeStyle == "dotted" ? 'round' : 'square'}
       />
     </svg>
   );

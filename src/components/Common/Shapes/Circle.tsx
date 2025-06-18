@@ -1,4 +1,5 @@
 import { ShapeProps } from "../../../tyeps";
+import { getStrokeStyle } from "../../../utils/strokeStyleUtil";
 
 const Circle = ({
   width = 100,
@@ -7,6 +8,7 @@ const Circle = ({
   stroke = '#7f1d1d',
   strokeWidth = 1,
   className = '',
+  strokeStyle = '',
 }: ShapeProps) => {
   return (
     <svg
@@ -25,6 +27,8 @@ const Circle = ({
         fill={fill}
         stroke={stroke}
         strokeWidth={strokeWidth}
+        strokeDasharray={getStrokeStyle(strokeStyle, strokeWidth)}
+        strokeLinecap={strokeStyle == "dotted" ? 'round' : 'square'}
       />
     </svg>
   );
