@@ -49,7 +49,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
     fontStyle = 'normal',
     textDecoration = 'none',
     textAlign = 'center',
-    strokeStyle = 'none'
   } = style;
 
   const toggleSection = (section: string) => {
@@ -238,7 +237,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
                 <div>
                   <button
                     onClick={() => setColorType('font')}
-                    className="w-full py-2 px-3 rounded-md border hover:ring-2 ring-blue-400 transition flex flex-col items-center transition-colors duration-200"
+                    className="w-full py-2 px-3 rounded-md border hover:ring-2 ring-blue-400  flex flex-col items-center  duration-200"
                     style={{
                       backgroundColor: fontColor,
                       borderColor: theme === 'dark' ? '#4b5563' : '#d1d5db'
@@ -250,7 +249,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
                 <div>
                   <button
                     onClick={() => setColorType('background')}
-                    className="w-full py-2 px-3 rounded-md border hover:ring-2 ring-blue-400 transition flex flex-col items-center transition-colors duration-200"
+                    className="w-full py-2 px-3 rounded-md border hover:ring-2 ring-blue-400  flex flex-col items-center  duration-200"
                     style={{
                       backgroundColor: fillColor,
                       borderColor: theme === 'dark' ? '#4b5563' : '#d1d5db'
@@ -262,7 +261,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
                 <div>
                   <button
                     onClick={() => setColorType('border')}
-                    className="w-full py-2 px-3 rounded-md border hover:ring-2 ring-blue-400 transition flex flex-col items-center transition-colors duration-200"
+                    className="w-full py-2 px-3 rounded-md border hover:ring-2 ring-blue-400  flex flex-col items-center transition-colors duration-200"
                     style={{
                       backgroundColor: strokeColor,
                       borderColor: theme === 'dark' ? '#4b5563' : '#d1d5db'
@@ -562,7 +561,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
             <div className="px-4 pb-4 grid grid-cols-4 gap-2">
               <button
                 onClick={() => sendToBack(panel.id)}
-                className={`py-2 px-3 rounded-md flex flex-col items-center justify-center gap-1 hover:bg-gray-200 dark:hover:bg-gray-500 transition transition-colors duration-200 ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
+                className={`py-2 px-3 rounded-md flex flex-col items-center justify-center gap-1 hover:bg-gray-200 dark:hover:bg-gray-500 duration-200 ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
                   }`}
                 title="Send to Back"
               >
@@ -571,7 +570,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
               </button>
               <button
                 onClick={() => sendBackward(panel.id)}
-                className={`py-2 px-3 rounded-md flex flex-col items-center justify-center gap-1 hover:bg-gray-200 dark:hover:bg-gray-500 transition transition-colors duration-200 ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
+                className={`py-2 px-3 rounded-md flex flex-col items-center justify-center gap-1 hover:bg-gray-200 dark:hover:bg-gray-500  duration-200 ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
                   }`}
                 title="Send Backward"
               >
@@ -580,7 +579,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
               </button>
               <button
                 onClick={() => bringForward(panel.id)}
-                className={`py-2 px-3 rounded-md flex flex-col items-center justify-center gap-1 hover:bg-gray-200 dark:hover:bg-gray-500 transition transition-colors duration-200 ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
+                className={`py-2 px-3 rounded-md flex flex-col items-center justify-center gap-1 hover:bg-gray-200 dark:hover:bg-gray-500  duration-200 ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
                   }`}
                 title="Bring Forward"
               >
@@ -589,7 +588,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
               </button>
               <button
                 onClick={() => bringToFront(panel.id)}
-                className={`py-2 px-3 rounded-md flex flex-col items-center justify-center gap-1 hover:bg-gray-200 dark:hover:bg-gray-500 transition transition-colors duration-200 ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
+                className={`py-2 px-3 rounded-md flex flex-col items-center justify-center gap-1 hover:bg-gray-200 dark:hover:bg-gray-500  duration-200 ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
                   }`}
                 title="Bring to Front"
               >
@@ -623,7 +622,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
             <div className="px-4 pb-4 grid grid-cols-2 gap-2">
               <button
                 onClick={() => addDuplicatePanel(selectedPanelId, false)}
-                className={`py-2 px-3 rounded-md flex items-center justify-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-500 transition transition-colors duration-200 ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
+                className={`py-2 px-3 rounded-md flex items-center justify-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-500  duration-200 ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
                   }`}
               >
                 <CopyIcon size={16} />
@@ -631,7 +630,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
               </button>
               <button
                 onClick={() => removePanel(panel.id)}
-                className={`py-2 px-3 rounded-md flex items-center justify-center gap-2 hover:bg-red-200 dark:hover:bg-red-800 transition transition-colors duration-200 ${theme === 'dark' ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'
+                className={`py-2 px-3 rounded-md flex items-center justify-center gap-2 hover:bg-red-200 dark:hover:bg-red-800   duration-200 ${theme === 'dark' ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'
                   }`}
               >
                 <Trash2Icon size={16} />

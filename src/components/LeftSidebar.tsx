@@ -1,6 +1,6 @@
-import { Moon, Sun, Square, Circle, Diamond, Triangle, Star, Type, LayoutGrid, TextCursorInput, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Moon, Sun, Square, Circle, Diamond, Triangle, Star, Type, LayoutGrid, TextCursorInput, ChevronLeft, ChevronRight, X  } from 'lucide-react';
 import { useState } from 'react';
-import { Panel, usePanel } from '../context/PanelContext';
+import {  usePanel } from '../context/PanelContext';
 import { useCanvasSettings } from '../context/CanvasSettingsContext';
 import { useTheme } from '../context/ThemeContext';
 import ColorPicker from 'react-best-gradient-color-picker';
@@ -31,7 +31,6 @@ function LeftSideBar() {
         setCanvasGradient,
         canvasTitle,
         setCanvasTitle,
-        draggedPanel,
         setDraggedPanel
     } = useCanvasSettings();
 
@@ -78,7 +77,7 @@ function LeftSideBar() {
                     ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
                 title="Close sidebar"
             >
-                <ChevronLeft size={20} />
+                <X size={16} />
             </button>
 
             {/* Canvas Title */}

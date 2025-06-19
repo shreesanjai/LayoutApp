@@ -35,7 +35,7 @@ export default function Header() {
         toggleEdit
     } = useCanvasSettings();
     return (
-        <div className="flex justify-between items-center mb-8 h-[60px]">
+        <div className="flex justify-between items-center mb-8 h-[60px] border border-b-2 px-2">
             <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                 Layout Designer
             </h1>
@@ -48,9 +48,6 @@ export default function Header() {
                             : 'bg-green-500 hover:bg-green-600'
                             } text-white transition-colors`}
                     >
-                        <Plus size={20} />
-                    </button>
-                    <button>
                         <Plus size={20} />
                     </button>
 
