@@ -25,6 +25,7 @@ const PanelIOContext = createContext<PanelIOContextType | undefined>(undefined);
 export const PanelIOProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
     const {
+        canvasTitle,
         canvasBgColor,
         canvasWidth,
         canvasHeight,
@@ -58,7 +59,7 @@ export const PanelIOProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "panel-layout.json";
+        link.download = `${canvasTitle}`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -100,7 +101,7 @@ export const PanelIOProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 logging: false,
             }).then((canvas: HTMLCanvasElement) => {
                 const link = document.createElement('a');
-                link.download = 'panel-drawing.png';
+                link.download = `${canvasTitle}`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             });

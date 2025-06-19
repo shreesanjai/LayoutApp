@@ -67,6 +67,8 @@ export const PanelProvider = ({ children }: { children: React.ReactNode }) => {
 
     const addPanel = (shape: string) => {
         const canvas = document.querySelector('.canvas-container');
+        console.log(panels);
+        console.log(canvas)
         if (!canvas) return;
 
         const rect = canvas.getBoundingClientRect();

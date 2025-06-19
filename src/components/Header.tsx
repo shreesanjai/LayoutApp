@@ -35,7 +35,7 @@ export default function Header() {
         toggleEdit
     } = useCanvasSettings();
     return (
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8 h-[60px]">
             <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                 Layout Designer
             </h1>
@@ -48,6 +48,9 @@ export default function Header() {
                             : 'bg-green-500 hover:bg-green-600'
                             } text-white transition-colors`}
                     >
+                        <Plus size={20} />
+                    </button>
+                    <button>
                         <Plus size={20} />
                     </button>
 
@@ -128,7 +131,7 @@ export default function Header() {
                 >
                     {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
                 </button>
-            
+
             </div>
             {isEditingCanvas && (
                 <div className="absolute top-[9%] right-[14.5%] z-30 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-xl border dark:border-gray-700">
