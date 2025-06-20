@@ -14,3 +14,33 @@
   right: 0;
   cursor: se-resize;
 }
+
+/* In your CSS file or style block */
+.rnd-rotate-center {
+  transform-origin: center center !important;
+}
+
+@keyframes blink {
+
+  from,
+  to {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+.hide-side-bars{
+  display: none;
+}
+.canvas-container{
+  z-index: 1;
+}
+
+@media (min-width: 1024px) {
+    .container {
+        max-width: 100vw;
+    }
+}

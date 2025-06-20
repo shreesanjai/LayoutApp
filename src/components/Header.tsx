@@ -35,7 +35,7 @@ export default function Header() {
         toggleEdit
     } = useCanvasSettings();
     return (
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8 h-[60px] border border-b-2 px-2">
             <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                 Layout Designer
             </h1>
@@ -128,7 +128,7 @@ export default function Header() {
                 >
                     {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
                 </button>
-            
+
             </div>
             {isEditingCanvas && (
                 <div className="absolute top-[9%] right-[14.5%] z-30 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-xl border dark:border-gray-700">
@@ -136,7 +136,7 @@ export default function Header() {
                         <div className="flex gap-2 items-center">
                             <input
                                 type="number"
-                                value={canvasWidth}
+                                value={canvasWidth!}
                                 onChange={(e) => setCanvasWidth(Number(e.target.value))}
                                 // onKeyDown={handleCanvasKeyDown}
                                 className={`w-16 h-8 text-sm font-mono rounded px-2 ${theme === 'dark'
@@ -150,7 +150,7 @@ export default function Header() {
                                 }`}>×</span>
                             <input
                                 type="number"
-                                value={canvasHeight}
+                                value={canvasHeight!}
                                 onChange={(e) => setCanvasHeight(Number(e.target.value))}
                                 // onKeyDown={handleCanvasKeyDown}
                                 className={`w-16 h-8 text-sm font-mono rounded px-2 ${theme === 'dark'

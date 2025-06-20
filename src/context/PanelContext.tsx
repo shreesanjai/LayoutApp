@@ -4,13 +4,15 @@ export interface PanelStyle {
     fillColor?: string;
     strokeColor?: string;
     strokeWidth?: number;
-    borderRadius?: number;
-    fontColor?: string;
     fontSize?: number;
     fontWeight?: "normal" | "bold";
     fontStyle?: "normal" | "italic";
     textDecoration?: "none" | "underline";
     boxShadow?: string;
+    strokeStyle?: string;
+    borderRadius?: number;
+    fontColor?: string;
+    textAlign? : 'center' | 'left' | 'right';
 }
 
 export interface Panel {
@@ -25,88 +27,96 @@ export interface Panel {
     editingEnabled: boolean;
     rotation: number;
     style: PanelStyle;
-    title: string
+    title: string;
     isLocked: boolean;
+    lockAspectRatio: boolean;
 }
 
 interface PanelContextType {
     panels: Panel[];
-    addPanel: (s: string) => void;
+    addPanel: (shape: string) => void;
     clearPanels: () => void;
     removePanel: (id: string) => void;
-    addDuplicatePanel: (panelId: string, copiedPanel: boolean) => void
+    addDuplicatePanel: (id: string, copied: boolean) => void;
     updatePanel: (
         id: string,
-        updates: Partial<Omit<Panel, "id">> & {
-            style?: Partial<Panel["style"]>;
-        }
+        updates: Partial<Omit<Panel, "id">> & { style?: Partial<PanelStyle> }
     ) => void;
+    updatePanelSilently: (
+        id: string,
+        updates: Partial<Omit<Panel, "id">> & { style?: Partial<PanelStyle> }
+    ) => void;
+    undo: () => void;
+    redo: () => void;
+    canUndo: boolean;
+    canRedo: boolean;
+    setPanels: (newPanels: Panel[]) => void;
+    showPanelProperties : boolean;
+    setShowPanelProperties : (show : boolean) => void;
 }
 
 const PanelContext = createContext<PanelContextType | undefined>(undefined);
 
-export function PanelProvider({ children }: { children: React.ReactNode }) {
-
+export const PanelProvider = ({ children }: { children: React.ReactNode }) => {
     const [panels, setPanels] = useState<Panel[]>([]);
+    const [history, setHistory] = useState<Panel[][]>([]);
+    const [future, setFuture] = useState<Panel[][]>([]);
+    const [showPanelProperties, setShowPanelProperties] = useState<boolean>(false);
+
+    const pushToHistory = () => {
+        setHistory(prev => [...prev, panels.map(p => ({ ...p, style: { ...p.style } }))]);
+        setFuture([]);
+    };
 
     const addPanel = (shape: string) => {
         const canvas = document.querySelector('.canvas-container');
+        console.log(panels);
+        console.log(canvas)
         if (!canvas) return;
 
         const rect = canvas.getBoundingClientRect();
-
-        const x = rect.width / 2 - 200; // Center horizontally (400 width / 2)
-        const y = rect.height / 2 - 200; // Center vertically (400 height / 2)
-
+        const x = rect.width / 2 - 200;
+        const y = rect.height / 2 - 200;
         const maxZIndex = panels.reduce((max, p) => Math.max(max, p.zIndex), 0);
 
         const newPanel: Panel = {
-            id: crypto.randomUUID(),
+            id: Date.now().toString(),
             x,
             y,
-            width: shape === 'text' ? 250 : 400,
+            width: 400,
             height: (shape === 'text' || shape === 'rectangle') ? 100 : 400,
             zIndex: maxZIndex + 1,
             rotation: 0,
             moveEnabled: true,
             editingEnabled: true,
             shape,
+            title: `${shape}`,
             isLocked: false,
-            title: '',
+            lockAspectRatio: false,
             style: {
-                strokeColor: '#1e3a8a',
-                strokeWidth: 1,
-                borderRadius: 0,
-                fillColor: 'transparent',
-                fontColor: '#000000',
+                fillColor: '#ffffff',
+                strokeColor: '#000000',
+                strokeWidth: 2,
                 fontSize: 16,
                 fontWeight: 'normal',
                 fontStyle: 'normal',
                 textDecoration: 'none',
                 boxShadow: '',
-            },
+                strokeStyle: '',
+                borderRadius: 0,
+                fontColor: 'black'
+            }
         };
 
+        pushToHistory();
         setPanels(prev => [...prev, newPanel]);
-    };
-
-
-
-    const clearPanels = () => {
-        setPanels([]);
-    };
-
-    const removePanel = (id: string) => {
-        setPanels(prev => prev.filter(panel => panel.id !== id));
     };
 
     const updatePanel = (
         id: string,
-        updates: Partial<Omit<Panel, "id">> & {
-            style?: Partial<Panel["style"]>;
-        }
+        updates: Partial<Omit<Panel, "id">> & { style?: Partial<PanelStyle> }
     ) => {
-        console.log(updates)
+        pushToHistory();
         setPanels(prev =>
             prev.map(panel =>
                 panel.id === id
@@ -116,69 +126,109 @@ export function PanelProvider({ children }: { children: React.ReactNode }) {
                         style: {
                             ...panel.style,
                             ...updates.style,
-                        },
+                        }
                     }
                     : panel
             )
         );
     };
 
+    const updatePanelSilently = (
+        id: string,
+        updates: Partial<Omit<Panel, "id">> & { style?: Partial<PanelStyle> }
+    ) => {
+        setPanels(prev =>
+            prev.map(panel =>
+                panel.id === id
+                    ? {
+                        ...panel,
+                        ...updates,
+                        style: {
+                            ...panel.style,
+                            ...updates.style,
+                        }
+                    }
+                    : panel
+            )
+        );
+    };
 
-    const addDuplicatePanel = (panelId: string, copiedPanel: boolean ) => {
-        const panel = panels.find((p) => panelId === p.id);
-        if (!panel) throw new Error("Panel not found");
+    const removePanel = (id: string) => {
+        pushToHistory();
+        setPanels(prev => prev.filter(panel => panel.id !== id));
+    };
 
-        const baseTitle = panel.title;
-        const similarPanelsCount = panels.filter(p => p.title.startsWith(baseTitle)).length;
+    const clearPanels = () => {
+        pushToHistory();
+        setPanels([]);
+    };
 
-        const offset = copiedPanel ? 10 : 20 * similarPanelsCount;
+    const addDuplicatePanel = (panelId: string, copied: boolean) => {
+        const panel = panels.find(p => p.id === panelId);
+        if (!panel) return;
+
+        const similarCount = panels.filter(p => p.title.startsWith(panel.title)).length;
+        const offset = copied ? 10 : 20 * similarCount;
 
         const newPanel: Panel = {
-            id: crypto.randomUUID(),
+            ...panel,
+            id: Date.now().toString(),
             x: panel.x + offset,
             y: panel.y + offset,
-            width: panel.width,
-            height: panel.height,
             zIndex: panel.zIndex + 1,
-            rotation: panel.rotation,
-            moveEnabled: true,
-            editingEnabled: true,
-            shape: panel.shape,
-            isLocked: panel.isLocked,
-            title: `${panel.title} Copy ${similarPanelsCount}`,
-            style: {
-                strokeColor: panel.style.strokeColor,
-                strokeWidth: panel.style.strokeWidth,
-                borderRadius: panel.style.borderRadius,
-                fillColor: panel.style.fillColor,
-                fontColor: panel.style.fontColor,
-                fontSize: panel.style.fontSize,
-                fontWeight: panel.style.fontWeight,
-                fontStyle: panel.style.fontStyle,
-                textDecoration: panel.style.textDecoration,
-                boxShadow: panel.style.boxShadow,
-            },
+            title: `${panel.title} Copy`
         };
 
+        pushToHistory();
         setPanels(prev => [...prev, newPanel]);
     };
 
+    const undo = () => {
+        if (history.length === 0) return;
+        const previous = history[history.length - 1];
+        setHistory(prev => prev.slice(0, prev.length - 1));
+        setFuture(prev => [panels, ...prev]);
+        setPanels(previous);
+    };
 
+    const redo = () => {
+        if (future.length === 0) return;
+        const next = future[0];
+        setFuture(prev => prev.slice(1));
+        setHistory(prev => [...prev, panels]);
+        setPanels(next);
+    };
 
-
-
+    const setPanelsDirect = (newPanels: Panel[]) => {
+        setPanels(newPanels);
+    };
 
     return (
-        <PanelContext.Provider value={{ panels, addPanel, clearPanels, removePanel, updatePanel, addDuplicatePanel }} >{children}</PanelContext.Provider>
+        <PanelContext.Provider
+            value={{
+                panels,
+                addPanel,
+                clearPanels,
+                removePanel,
+                updatePanel,
+                updatePanelSilently,
+                addDuplicatePanel,
+                undo,
+                redo,
+                canUndo: history.length > 0,
+                canRedo: future.length > 0,
+                setPanels: setPanelsDirect,
+                showPanelProperties,
+                setShowPanelProperties
+            }}
+        >
+            {children}
+        </PanelContext.Provider>
     );
+};
 
-
-}
-
-export function usePanel() {
+export const usePanel = () => {
     const context = useContext(PanelContext);
-    if (context === undefined) {
-        throw new Error('useTheme must be used within a ThemeProvider');
-    }
+    if (!context) throw new Error('usePanel must be used within a PanelProvider');
     return context;
-}
+};

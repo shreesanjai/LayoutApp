@@ -1,4 +1,7 @@
 import { ShapeProps } from "../../../tyeps";
+import { getStrokeStyle } from "../../../utils/strokeStyleUtil";
+
+
 
 const Diamond = ({
     width = 100,
@@ -6,9 +9,11 @@ const Diamond = ({
     fill = '',
     stroke = '#064e3b',
     strokeWidth = 1,
-    borderRadius = 0,
     className = '',
+    strokeStyle = ''
 }: ShapeProps) => {
+
+ 
     // Calculate points for diamond shape
     const points = [
         [width / 2, 0],                   // Top center
@@ -29,14 +34,15 @@ const Diamond = ({
                 className={`${className} absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2`}
                 xmlns="http://www.w3.org/2000/svg"
                 preserveAspectRatio="xMidYMid meet"
+                strokeDasharray={getStrokeStyle(strokeStyle, strokeWidth)}
+                strokeLinecap={strokeStyle == "dotted" ? 'round' : 'square'}
             >
                 <polygon
                     points={pointsString}
                     fill={fill}
-                    stroke={stroke}
+                    stroke={strokeStyle != 'none' ? stroke : ''}
                     strokeWidth={strokeWidth}
-                    strokeLinejoin="round"
-                    rx={borderRadius} // Some SVG implementations support this
+                    strokeLinejoin="round" 
                 />
             </svg>
         </div>

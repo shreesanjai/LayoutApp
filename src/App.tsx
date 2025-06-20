@@ -3,6 +3,8 @@ import DrawingCanvas from './components/DrawingCanvas';
 import { PanelProvider } from './context/PanelContext';
 import { PanelIOProvider } from './context/PanelIOContext';
 import { CanvasSettingsProvider } from './context/CanvasSettingsContext';
+import Header from './components/HeaderSample';
+
 
 
 function App() {
@@ -11,7 +13,8 @@ function App() {
       <CanvasSettingsProvider>
         <PanelProvider>
           <PanelIOProvider>
-            <DrawingCanvas />
+              <Header />
+              <DrawingCanvas />
           </PanelIOProvider>
         </PanelProvider>
       </CanvasSettingsProvider>

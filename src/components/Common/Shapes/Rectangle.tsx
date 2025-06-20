@@ -1,4 +1,5 @@
 import { ShapeProps } from "../../../tyeps";
+import { getStrokeStyle } from "../../../utils/strokeStyleUtil";
 
 const Rectangle = ({
   width = 100,
@@ -8,9 +9,11 @@ const Rectangle = ({
   strokeWidth = 1,
   borderRadius = 0,
   className = '',
+  strokeStyle = '',
+  text = ''
 }: ShapeProps) => {
   const rx = Math.min(borderRadius, width / 2, height / 2);
-  
+
   return (
     <svg
       width={width}
@@ -26,7 +29,11 @@ const Rectangle = ({
         fill={fill}
         stroke={stroke}
         strokeWidth={strokeWidth}
+        strokeDasharray={getStrokeStyle(strokeStyle, strokeWidth)}
+        strokeLinecap={strokeStyle == "dotted" ? 'round' : 'square'}
+        
       />
+      <title >{text} </title>
     </svg>
   );
 };
