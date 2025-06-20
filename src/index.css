@@ -32,6 +32,13 @@
   }
 }
 
+.hide-side-bars{
+  display: none;
+}
+.canvas-container{
+  z-index: 1;
+}
+
 @media (min-width: 1024px) {
     .container {
         max-width: 100vw;

@@ -13,6 +13,7 @@ import {
   AlignCenterIcon,
   AlignRightIcon,
   Star,
+  Layers,
 } from 'lucide-react';
 import { HexColorPicker } from 'react-colorful';
 import { usePanel } from '../context/PanelContext';
@@ -23,7 +24,7 @@ interface ToolbarProps {
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
-  const { panels, updatePanel, removePanel, addDuplicatePanel, setPanels } = usePanel();
+  const { panels, updatePanel, removePanel, addDuplicatePanel, setPanels, showPanelProperties } = usePanel();
   const { theme } = useTheme();
   const panel = panels.find(p => p.id === selectedPanelId);
 
@@ -32,7 +33,18 @@ const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
   const [colorInput, setColorInput] = useState('');
 
   if (!panel) {
-    return
+    console.log(panel)
+    return (
+      <div className={`side-bar w-80 h-full bg-white border-l border-gray-200 p-6 shadow-sm fixed top-14 right-0 z-50 ${showPanelProperties ? '' : 'hidden'}`}>
+        <div className="text-center text-gray-500 mt-20">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Layers size={24} />
+          </div>
+          <h3 className="text-lg font-medium mb-2">No Shape Selected</h3>
+          <p className="text-sm">Select a shape to edit its properties</p>
+        </div>
+      </div>
+    )
   }
 
   const updateStyle = (updates: Partial<typeof panel.style>) => {
@@ -151,7 +163,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
 
   return (
     <div
-      className="fixed top-20 right-0 z-50 shadow-lg border-l w-80 h-screen flex flex-col transition-colors duration-200"
+      className="side-bar fixed top-14 right-0 z-[1000] shadow-lg border-l w-80 h-screen flex flex-col transition-colors duration-200"
       style={{
         backgroundColor: theme === 'dark' ? '#1f2937' : '#ffffff',
         borderColor: theme === 'dark' ? '#374151' : '#e5e7eb'
@@ -443,7 +455,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ selectedPanelId }) => {
               Border Style
             </label>
             <select
-              onChange={(e) => updatePanel(panel.id, {style :{ strokeStyle: e.target.value }})}
+              onChange={(e) => updatePanel(panel.id, { style: { strokeStyle: e.target.value } })}
               className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="solid">Solid</option>

@@ -9,10 +9,10 @@ interface CanvasSettingsContextType {
     canvasGradient: string
     setCanvasGradient: (gradient: string) => void;
     setCanvasFgColor: (color: string) => void;
-    canvasWidth: number;
-    setCanvasWidth: (width: number) => void;
-    canvasHeight: number;
-    setCanvasHeight: (height: number) => void;
+    canvasWidth: number | null;
+    setCanvasWidth: (width: number | null) => void;
+    canvasHeight: number | null;
+    setCanvasHeight: (height: number | null) => void;
     roundedCorners: boolean;
     setRoundedCorners: (rounded: boolean) => void;
     showGrid: boolean;
@@ -25,6 +25,8 @@ interface CanvasSettingsContextType {
     setCanvasPositionY: (y: number) => void;
     draggedPanel : string;
     setDraggedPanel : (shape : string) => void;
+    showCanvasSettings : boolean;
+    setShowCanvasSettings : (show : boolean) => void;
 }
 
 const CanvasSettingsContext = createContext<CanvasSettingsContextType | undefined>(undefined);
@@ -33,16 +35,17 @@ export const CanvasSettingsProvider: React.FC<{ children: React.ReactNode }> = (
 
     const [canvasBgColor, setCanvasBgColor] = useState<string>("#ffffff");
     const [canvasFgColor, setCanvasFgColor] = useState<string>("#000000");
-    const [canvasWidth, setCanvasWidth] = useState<number>(1280);
-    const [canvasHeight, setCanvasHeight] = useState<number>(720);
+    const [canvasWidth, setCanvasWidth] = useState<number | null>(null);
+    const [canvasHeight, setCanvasHeight] = useState<number | null>(null);
     const [roundedCorners, setRoundedCorners] = useState<boolean>(false);
     const [showGrid, setShowGrid] = useState<boolean>(false);
     const [isEditingCanvas, setIsEditingCanvas] = useState<boolean>(false);
-    const [canvasPositionX, setCanvasPositionX] = useState<number>(10)
-    const [canvasPositionY, setCanvasPositionY] = useState<number>(10);
+    const [canvasPositionX, setCanvasPositionX] = useState<number>(0)
+    const [canvasPositionY, setCanvasPositionY] = useState<number>(0);
     const [canvasGradient, setCanvasGradient] = useState('#fffff');
     const [canvasTitle, setCanvasTitle] = useState('My Canva');
     const [draggedPanel, setDraggedPanel] = useState('');
+    const [showCanvasSettings, setShowCanvasSettings] = useState<boolean>(false);
 
     function toggleEdit() {
         setIsEditingCanvas(!isEditingCanvas);
@@ -75,6 +78,8 @@ export const CanvasSettingsProvider: React.FC<{ children: React.ReactNode }> = (
                 setCanvasPositionY,
                 setDraggedPanel,
                 draggedPanel,
+                showCanvasSettings,
+                setShowCanvasSettings
             }}
         >
             {children}

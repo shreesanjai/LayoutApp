@@ -136,7 +136,7 @@ export default function Header() {
                         <div className="flex gap-2 items-center">
                             <input
                                 type="number"
-                                value={canvasWidth}
+                                value={canvasWidth!}
                                 onChange={(e) => setCanvasWidth(Number(e.target.value))}
                                 // onKeyDown={handleCanvasKeyDown}
                                 className={`w-16 h-8 text-sm font-mono rounded px-2 ${theme === 'dark'
@@ -150,7 +150,7 @@ export default function Header() {
                                 }`}>×</span>
                             <input
                                 type="number"
-                                value={canvasHeight}
+                                value={canvasHeight!}
                                 onChange={(e) => setCanvasHeight(Number(e.target.value))}
                                 // onKeyDown={handleCanvasKeyDown}
                                 className={`w-16 h-8 text-sm font-mono rounded px-2 ${theme === 'dark'

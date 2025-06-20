@@ -51,6 +51,8 @@ interface PanelContextType {
     canUndo: boolean;
     canRedo: boolean;
     setPanels: (newPanels: Panel[]) => void;
+    showPanelProperties : boolean;
+    setShowPanelProperties : (show : boolean) => void;
 }
 
 const PanelContext = createContext<PanelContextType | undefined>(undefined);
@@ -59,6 +61,7 @@ export const PanelProvider = ({ children }: { children: React.ReactNode }) => {
     const [panels, setPanels] = useState<Panel[]>([]);
     const [history, setHistory] = useState<Panel[][]>([]);
     const [future, setFuture] = useState<Panel[][]>([]);
+    const [showPanelProperties, setShowPanelProperties] = useState<boolean>(false);
 
     const pushToHistory = () => {
         setHistory(prev => [...prev, panels.map(p => ({ ...p, style: { ...p.style } }))]);
@@ -214,7 +217,9 @@ export const PanelProvider = ({ children }: { children: React.ReactNode }) => {
                 redo,
                 canUndo: history.length > 0,
                 canRedo: future.length > 0,
-                setPanels: setPanelsDirect
+                setPanels: setPanelsDirect,
+                showPanelProperties,
+                setShowPanelProperties
             }}
         >
             {children}
