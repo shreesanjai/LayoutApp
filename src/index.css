@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+  @apply bg-white text-black dark:bg-gray-900 dark:text-white;
+}
+
 .react-resizable {
   position: relative;
 }
@@ -13,4 +17,12 @@
   bottom: 0;
   right: 0;
   cursor: se-resize;
+}
+/* Hide scrollbars */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }

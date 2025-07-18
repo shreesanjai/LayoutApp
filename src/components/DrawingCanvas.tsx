@@ -1,172 +1,133 @@
-import React, { useState, useEffect } from 'react';
-import { useTheme } from '../context/ThemeContext';
-import { Moon, Sun, Plus, Trash2, Move, Settings, Download, Upload, Save } from 'lucide-react';
-import Draggable from 'react-draggable';
-import html2canvas from 'html2canvas';
-
-interface Panel {
-  id: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  zIndex: number;
-}
-
-interface CanvasConfig {
-  panels: Panel[];
-  canvasWidth: number;
-  canvasHeight: number;
-  canvasBgColor: string;
-  canvasFgColor: string;
-  roundedCorners: boolean;
-  showGrid: boolean;
-}
+import React, { useState } from "react";
+import { useTheme } from "../context/ThemeContext";
+import html2canvas from "html2canvas";
+import { CanvasConfig, Panel } from "../types/canvas";
+import Toolbar from "./ToolBar";
+import { useCanvasState } from "../hooks/useCanvasState";
+import PanelComponent from "./Panel";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+import { useGridlines } from "../hooks/useGridlines";
+import Guidelines from "./Guidelines";
+import { useResizing } from "../hooks/useResizing";
+import { usePanelOperations } from "../hooks/usePanelOperations";
+import { usePanelDrag } from "../hooks/usePanelDrag";
 
 export default function DrawingCanvas() {
-  const { theme, toggleTheme } = useTheme();
-  const [panels, setPanels] = useState<Panel[]>([]);
-  const [selectedPanel, setSelectedPanel] = useState<string | null>(null);
-  const [isCtrlPressed, setIsCtrlPressed] = useState(false);
-  const [moveMode, setMoveMode] = useState(false);
-  const [editingPanel, setEditingPanel] = useState<string | null>(null);
-  const [newWidth, setNewWidth] = useState('');
-  const [newHeight, setNewHeight] = useState('');
-  const [canvasWidth, setCanvasWidth] = useState(1280);
-  const [canvasHeight, setCanvasHeight] = useState(720);
-  const [isEditingCanvas, setIsEditingCanvas] = useState(false);
-  const [newCanvasWidth, setNewCanvasWidth] = useState('');
-  const [newCanvasHeight, setNewCanvasHeight] = useState('');
-  const [canvasBgColor, setCanvasBgColor] = useState('#ffffff');
-  const [canvasFgColor, setCanvasFgColor] = useState('#000000');
-  const [roundedCorners, setRoundedCorners] = useState(true);
-  const [showGrid, setShowGrid] = useState(false);
+  const { theme } = useTheme();
+  const { state, actions } = useCanvasState();
+  const {
+    panels,
+    selectedPanels,
+    canvasWidth,
+    canvasHeight,
+    canvasBgColor,
+    canvasFgColor,
+    roundedCorners,
+    showGrid,
+    past,
+    future,
+  } = state;
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Control') {
-        setIsCtrlPressed(true);
-      }
-    };
+  const [copiedPanels, setCopiedPanels] = useState<Panel[]>([]);
+  const [useGradient, setUseGradient] = useState(false);
+  const [customGradientColors, setCustomGradientColors] = useState(["#ffffff", "#ffffff"]);
+  const [angle, setAngle] = useState(90);
+  const [gradientType, setGradientType] = useState("custom");
+  const [includeTextInExport, setIncludeTextInExport] = useState(true);
 
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Control') {
-        setIsCtrlPressed(false);
-      }
-    };
+  const { guidelines, showGuidelines, hideGuidelines } = useGridlines({
+    canvasWidth,
+    canvasHeight,
+    panels,
+    alignmentThreshold: 2,
+  });
 
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
+  const { resizingPanel, startResizing, startResizingCanvas } = useResizing({
+    panels,
+    canvasWidth,
+    canvasHeight,
+    actions,
+    hideGuidelines,
+  });
 
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, []);
+  const { addPanel, addTextBoxPanel, removePanel, handleDimensionClick } = usePanelOperations({
+    panels,
+    actions,
+  });
 
-  const addPanel = () => {
-    const canvas = document.querySelector('.canvas-container');
-    if (canvas) {
-      const rect = canvas.getBoundingClientRect();
-      const x = rect.width / 2 - 50; // Center horizontally
-      const y = rect.height / 2 - 50; // Center vertically
-      const maxZIndex = panels.length > 0 
-        ? Math.max(...panels.map(p => p.zIndex))
-        : 0;
-      setPanels(prev => [...prev, { 
-        id: crypto.randomUUID(), 
-        x, 
-        y,
-        width: 400,
-        height: 400,
-        zIndex: maxZIndex + 1
-      }]);
+  const { handleDragStart, handleDrag, handleDragStop } = usePanelDrag(
+    panels,
+    selectedPanels,
+    actions,
+    showGuidelines,
+    hideGuidelines
+  );
+
+  const getBackgroundStyle = () => {
+    if (useGradient) {
+      return gradientType === "custom"
+        ? `linear-gradient(${angle}deg,  ${customGradientColors.join(", ")})`
+        : gradientType;
     }
+    return `linear-gradient(${canvasBgColor}, ${canvasBgColor})`;
   };
 
-  const removePanel = (id: string) => {
-    setPanels(prev => prev.filter(panel => panel.id !== id));
-    setSelectedPanel(null);
-  };
-
-  const clearPanels = () => {
-    setPanels([]);
-    setSelectedPanel(null);
-  };
-
-  const handleDragStop = (id: string, e: any, data: { x: number; y: number }) => {
-    setPanels(prev => prev.map(panel => 
-      panel.id === id ? { ...panel, x: data.x, y: data.y } : panel
-    ));
-  };
-
-  const handleDimensionClick = (panel: Panel) => {
-    setEditingPanel(panel.id);
-    setNewWidth(panel.width.toString());
-    setNewHeight(panel.height.toString());
-  };
-
-  const handleDimensionSubmit = (id: string) => {
-    const width = parseInt(newWidth);
-    const height = parseInt(newHeight);
-    
-    if (!isNaN(width) && !isNaN(height) && width >= 50 && height >= 50) {
-      setPanels(prev => prev.map(panel =>
-        panel.id === id ? { ...panel, width, height } : panel
-      ));
-    }
-    setEditingPanel(null);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent, id: string) => {
-    if (e.key === 'Enter') {
-      handleDimensionSubmit(id);
-    } else if (e.key === 'Escape') {
-      setEditingPanel(null);
-    }
-  };
-
-  const toggleMoveMode = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setMoveMode(!moveMode);
-  };
-
-  const handleCanvasDimensionClick = () => {
-    setIsEditingCanvas(true);
-    setNewCanvasWidth(canvasWidth.toString());
-    setNewCanvasHeight(canvasHeight.toString());
-  };
-
-  const handleCanvasDimensionSubmit = () => {
-    const width = parseInt(newCanvasWidth);
-    const height = parseInt(newCanvasHeight);
-    
-    if (!isNaN(width) && !isNaN(height) && width >= 200 && height >= 200) {
-      setCanvasWidth(width);
-      setCanvasHeight(height);
-    }
-    setIsEditingCanvas(false);
-  };
-
-  const handleCanvasKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleCanvasDimensionSubmit();
-    } else if (e.key === 'Escape') {
-      setIsEditingCanvas(false);
+  const handleCanvasDimensionSubmit = (width: string, height: string) => {
+    const newWidth = parseInt(width);
+    const newHeight = parseInt(height);
+    if (
+      !isNaN(newWidth) &&
+      !isNaN(newHeight) &&
+      newWidth >= 200 &&
+      newHeight >= 200
+    ) {
+      actions.setCanvasDimensions(newWidth, newHeight);
     }
   };
 
   const exportToPNG = () => {
-    const canvas = document.querySelector('.canvas-container');
+    const canvas = document.querySelector(".canvas-container");
     if (canvas) {
+      const textElements = canvas.querySelectorAll("*");
+      const hiddenElements: {
+        element: HTMLElement;
+        originalDisplay: string;
+      }[] = [];
+
+      // Only hide text elements if includeTextInExport is false
+      if (!includeTextInExport) {
+        textElements.forEach((el) => {
+          const htmlEl = el as HTMLElement;
+          if (
+            htmlEl.textContent &&
+            htmlEl.textContent.trim().length > 0 &&
+            !htmlEl.querySelector("*")
+          ) {
+            hiddenElements.push({
+              element: htmlEl,
+              originalDisplay: htmlEl.style.display,
+            });
+            htmlEl.style.display = "none";
+          }
+        });
+      }
+
       html2canvas(canvas as HTMLElement, {
         backgroundColor: canvasBgColor,
-        scale: 2, // Higher quality
+        scale: 2,
         logging: false,
       }).then((canvas: HTMLCanvasElement) => {
-        const link = document.createElement('a');
-        link.download = 'panel-drawing.png';
-        link.href = canvas.toDataURL('image/png');
+        // Restore hidden elements
+        hiddenElements.forEach(({ element, originalDisplay }) => {
+          element.style.display = originalDisplay;
+        });
+
+        const link = document.createElement("a");
+        link.download = `panel-drawing-${new Date()
+          .toISOString()
+          .slice(0, 19)
+          .replace(/:/g, "-")}.png`;
+        link.href = canvas.toDataURL("image/png");
         link.click();
       });
     }
@@ -180,14 +141,18 @@ export default function DrawingCanvas() {
       canvasBgColor,
       canvasFgColor,
       roundedCorners,
-      showGrid
+      showGrid,
+      useGradient,
+      gradientType,
+      angle,
     };
-    
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(config, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.download = 'panel-layout.json';
+    link.download = "panel-layout.json";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -201,344 +166,186 @@ export default function DrawingCanvas() {
       reader.onload = (e) => {
         try {
           const config: CanvasConfig = JSON.parse(e.target?.result as string);
-          setPanels(config.panels);
-          setCanvasWidth(config.canvasWidth);
-          setCanvasHeight(config.canvasHeight);
-          setCanvasBgColor(config.canvasBgColor);
-          setCanvasFgColor(config.canvasFgColor);
-          setRoundedCorners(config.roundedCorners);
-          setShowGrid(config.showGrid);
+          actions.loadConfig(config);
+          setUseGradient(config.useGradient ?? false);
+          setAngle(config.angle ?? 90);
+          setGradientType(
+            config.gradientType ?? "linear-gradient(90deg, #ff7e5f, #feb47b)"
+          );
         } catch (error) {
-          console.error('Error importing configuration:', error);
-          alert('Error importing configuration. Please check the file format.');
+          console.error("Error importing configuration:", error);
+          alert("Error importing JSON. Please check the file format.");
         }
       };
       reader.readAsText(file);
     }
   };
 
-  return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-            Layout Designer
-          </h1>
-          <div className="flex gap-4">
-            <button
-              onClick={addPanel}
-              className={`p-2 rounded-lg ${
-                theme === 'dark'
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-green-500 hover:bg-green-600'
-              } text-white transition-colors`}
-            >
-              <Plus size={20} />
-            </button>
-            <button
-              onClick={exportConfig}
-              className={`p-2 rounded-lg ${
-                theme === 'dark'
-                  ? 'bg-blue-600 hover:bg-blue-700'
-                  : 'bg-blue-500 hover:bg-blue-600'
-              } text-white transition-colors`}
-            >
-              <Save size={20} />
-            </button>
-            <label
-              className={`p-2 rounded-lg ${
-                theme === 'dark'
-                  ? 'bg-blue-600 hover:bg-blue-700'
-                  : 'bg-blue-500 hover:bg-blue-600'
-              } text-white transition-colors cursor-pointer`}
-            >
-              <Upload size={20} />
-              <input
-                type="file"
-                accept=".json"
-                onChange={importConfig}
-                className="hidden"
-              />
-            </label>
-            <button
-              onClick={exportToPNG}
-              className={`p-2 rounded-lg ${
-                theme === 'dark'
-                  ? 'bg-purple-600 hover:bg-purple-700'
-                  : 'bg-purple-500 hover:bg-purple-600'
-              } text-white transition-colors`}
-            >
-              <Download size={20} />
-            </button>
-            <button
-              onClick={() => setIsEditingCanvas(!isEditingCanvas)}
-              className={`p-2 rounded-lg ${
-                theme === 'dark'
-                  ? 'bg-gray-600 hover:bg-gray-700'
-                  : 'bg-gray-500 hover:bg-gray-600'
-              } text-white transition-colors`}
-            >
-              <Settings size={20} />
-            </button>
-            <button
-              onClick={clearPanels}
-              className={`p-2 rounded-lg ${
-                theme === 'dark'
-                  ? 'bg-red-600 hover:bg-red-700'
-                  : 'bg-red-500 hover:bg-red-600'
-              } text-white transition-colors`}
-            >
-              <Trash2 size={20} />
-            </button>
-            <button
-              onClick={toggleTheme}
-              className={`p-2 rounded-lg ${
-                theme === 'dark'
-                  ? 'bg-yellow-600 hover:bg-yellow-700'
-                  : 'bg-blue-500 hover:bg-blue-600'
-              } text-white transition-colors`}
-            >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
-          </div>
-        </div>
+  const clearPanels = () => {
+    actions.clearPanels();
+  };
 
-        <div className="flex justify-center items-center">
-          <div 
+  const handleBgColorChange = (color: string) => {
+    actions.setCanvasColors(color);
+  };
+
+  const handleFgColorChange = (color: string) => {
+    actions.setCanvasColors(undefined, color);
+  };
+
+  const handleRoundedCornersToggle = () => {
+    actions.setCanvasOptions(!roundedCorners);
+  };
+
+  const handleShowGridToggle = () => {
+    actions.setCanvasOptions(undefined, !showGrid);
+  };
+
+  const { isCtrlPressed, handleCopy, handlePaste, handleCut } = useKeyboardShortcuts({
+    selectedPanels,
+    panels,
+    onUndo: actions.undo,
+    onRedo: actions.redo,
+    onAddPanel: actions.addPanel,
+    onRemovePanel: actions.removePanel,
+    copiedPanels,
+    setCopiedPanels,
+    onUpdatePanel: actions.updatePanel, 
+    canvasHeight,
+    canvasWidth
+  });
+
+  return (
+    <div className="h-screen flex flex-col overflow-hidden">
+      {/* Fixed Toolbar */}
+      <div className="sticky top-0 z-30 bg-gray-50 dark:bg-gray-900 ">
+        <Toolbar
+          onAddPanel={addPanel}
+          textBoxPanel={addTextBoxPanel}
+          onExportConfig={exportConfig}
+          onImportConfig={importConfig}
+          onExportToPNG={exportToPNG}
+          onClearPanels={clearPanels}
+          onCopy={handleCopy}
+          onPaste={handlePaste}
+          onUndo={actions.undo}
+          onRedo={actions.redo}
+          canvasWidth={canvasWidth}
+          canvasHeight={canvasHeight}
+          canvasBgColor={canvasBgColor}
+          canvasFgColor={canvasFgColor}
+          roundedCorners={roundedCorners}
+          showGrid={showGrid}
+          onCanvasDimensionSubmit={handleCanvasDimensionSubmit}
+          onBgColorChange={handleBgColorChange}
+          onFgColorChange={handleFgColorChange}
+          onRoundedCornersToggle={handleRoundedCornersToggle}
+          onShowGridToggle={handleShowGridToggle}
+          canUndo={past.length > 0}
+          canRedo={future.length > 0}
+          canCopy={selectedPanels.length > 0}
+          canPaste={copiedPanels.length > 0}
+          onCut={handleCut}
+          canCut={selectedPanels.length > 0}
+          useGradient={useGradient}
+          setUseGradient={setUseGradient}
+          angle={angle}
+          setAngle={setAngle}
+          gradientType={gradientType}
+          setGradientType={setGradientType}
+          solidColor={canvasBgColor}
+          setSolidColor={handleBgColorChange}
+          hasShapes={panels.length > 0}
+          includeTextInExport={includeTextInExport}
+          setincludeTextInExport={setIncludeTextInExport}
+          customGradientColors={customGradientColors}
+  setCustomGradientColors={setCustomGradientColors}
+        />
+      </div>
+      <div
+        className="flex-grow flex justify-center  overflow-auto hide-scrollbar px-4 pt-5 pb-11
+    dark:bg-gray-900 bg-gray-50"
+      >
+        <div className="relative">
+          <div
             className={`relative border-2 canvas-container transition-colors duration-200 overflow-hidden ${
-              roundedCorners ? 'rounded-xl' : ''
-            } ${showGrid ? 'grid-background' : ''}`}
-            style={{ 
-              width: canvasWidth, 
+              roundedCorners ? "rounded-xl" : ""
+            } ${showGrid ? "grid-background" : ""}`}
+            style={{
+              width: canvasWidth,
               height: canvasHeight,
               backgroundColor: canvasBgColor,
               color: canvasFgColor,
-              backgroundImage: showGrid ? `linear-gradient(${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'} 1px, transparent 1px),
-                linear-gradient(90deg, ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'} 1px, transparent 1px)` : 'none',
-              backgroundSize: showGrid ? '20px 20px' : 'auto'
+              backgroundImage: showGrid
+                ? `
+                    repeating-linear-gradient(to right, #e5e7eb 0 1px, transparent 1px 20px),
+                    repeating-linear-gradient(to bottom, #e5e7eb 0 1px, transparent 1px 20px),
+                    ${getBackgroundStyle()}
+                  `
+                : getBackgroundStyle(),
+              backgroundSize: showGrid ? "20px 20px" : "auto",
             }}
           >
-            {isEditingCanvas && (
-              <div className="absolute top-4 right-4 z-30 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-xl border dark:border-gray-700">
-                <div className="space-y-4">
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="number"
-                      value={newCanvasWidth}
-                      onChange={(e) => setNewCanvasWidth(e.target.value)}
-                      onKeyDown={handleCanvasKeyDown}
-                      className={`w-16 h-8 text-sm font-mono rounded px-2 ${
-                        theme === 'dark'
-                          ? 'bg-gray-600 text-white border-gray-500'
-                          : 'bg-white text-gray-900 border-gray-300'
-                      } border`}
-                      min="200"
-                      max="1200"
-                    />
-                    <span className={`text-sm font-mono ${
-                      theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                    }`}>×</span>
-                    <input
-                      type="number"
-                      value={newCanvasHeight}
-                      onChange={(e) => setNewCanvasHeight(e.target.value)}
-                      onKeyDown={handleCanvasKeyDown}
-                      className={`w-16 h-8 text-sm font-mono rounded px-2 ${
-                        theme === 'dark'
-                          ? 'bg-gray-600 text-white border-gray-500'
-                          : 'bg-white text-gray-900 border-gray-300'
-                      } border`}
-                      min="200"
-                      max="1200"
-                    />
-                  </div>
-                  <div className="flex gap-4 items-center">
-                    <div className="flex flex-col gap-1">
-                      <label className={`text-xs font-mono ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                      }`}>Background</label>
-                      <input
-                        type="color"
-                        value={canvasBgColor}
-                        onChange={(e) => setCanvasBgColor(e.target.value)}
-                        className="w-8 h-8 rounded cursor-pointer"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className={`text-xs font-mono ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                      }`}>Foreground</label>
-                      <input
-                        type="color"
-                        value={canvasFgColor}
-                        onChange={(e) => setCanvasFgColor(e.target.value)}
-                        className="w-8 h-8 rounded cursor-pointer"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <label className={`text-xs font-mono ${
-                      theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                    }`}>Rounded Corners</label>
-                    <button
-                      onClick={() => setRoundedCorners(!roundedCorners)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        roundedCorners
-                          ? theme === 'dark'
-                            ? 'bg-blue-600'
-                            : 'bg-blue-500'
-                          : theme === 'dark'
-                            ? 'bg-gray-600'
-                            : 'bg-gray-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          roundedCorners ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <label className={`text-xs font-mono ${
-                      theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                    }`}>Show Grid</label>
-                    <button
-                      onClick={() => setShowGrid(!showGrid)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        showGrid
-                          ? theme === 'dark'
-                            ? 'bg-blue-600'
-                            : 'bg-blue-500'
-                          : theme === 'dark'
-                            ? 'bg-gray-600'
-                            : 'bg-gray-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          showGrid ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
+            {/* Render guidelines using the separate component */}
+            <Guidelines guidelines={guidelines} />
+
+            <div onClick={() => actions.setSelectedPanels([])} className="absolute inset-0 flex items-center justify-center border-2 border-transparent hover:border-blue-500 transition-colors duration-200 border-dashed">
+              <div
+                className="absolute -top-2 -left-2 w-4 h-4 bg-blue-500 rounded-full cursor-nwse-resize opacity-0 hover:opacity-100 z-30"
+                onMouseDown={(e) => startResizingCanvas(e, "top-left")}
+              />
+              <div
+                className="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 rounded-full cursor-nesw-resize opacity-0 hover:opacity-100 z-30"
+                onMouseDown={(e) => startResizingCanvas(e, "top-right")}
+              />
+              <div
+                className="absolute -bottom-2 -left-2 w-4 h-4 bg-blue-500 rounded-full cursor-nesw-resize opacity-0 hover:opacity-100 z-30"
+                onMouseDown={(e) => startResizingCanvas(e, "bottom-left")}
+              />
+              <div
+                className="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-500 rounded-full cursor-nwse-resize opacity-0 hover:opacity-100 z-30"
+                onMouseDown={(e) => startResizingCanvas(e, "bottom-right")}
+              />
+            </div>
+
+            {panels.length > 0 ? (
+              panels.map((panel) => (
+                <PanelComponent
+                  key={panel.id}
+                  panel={panel}
+                  theme={theme}
+                  isCtrlPressed={isCtrlPressed}
+                  resizingPanel={resizingPanel}
+                  selectedPanels={selectedPanels}
+                  roundedCorners={roundedCorners}
+                  canvasWidth={canvasWidth}
+                  canvasHeight={canvasHeight}
+                  actions={{
+                    setSelectedPanels: actions.setSelectedPanels,
+                    updatePanel: actions.updatePanel,
+                    removePanel: actions.removePanel,
+                    setEditingStates: actions.setEditingStates,
+                    bringForward: actions.bringForward,
+                    bringBackward: actions.bringBackward,
+                  }}
+                  onDragStart={handleDragStart}
+                  onDrag={handleDrag}
+                  onDragStop={handleDragStop}
+                  onStartResizing={startResizing}
+                  onRemovePanel={removePanel}
+                  onDimensionClick={handleDimensionClick}
+                  editingPanel={state.editingPanel}
+                  panels={panels}
+                />
+              ))
+            ) : (
+              <div
+                className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center`}
+                style={{ color: canvasFgColor }}
+              >
+                Click the insert tab to add a panel.
               </div>
             )}
-            {panels.map(panel => (
-              <Draggable
-                key={panel.id}
-                position={{ x: panel.x, y: panel.y }}
-                onStop={(e, data) => handleDragStop(panel.id, e, data)}
-                bounds="parent"
-                disabled={!isCtrlPressed && !moveMode}
-              >
-                <div
-                  className={`absolute ${
-                    selectedPanel === panel.id ? 'z-10' : 'z-0'
-                  }`}
-                  style={{ zIndex: panel.zIndex }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPanel(panel.id);
-                  }}
-                >
-                  <div className="relative group">
-                    <div
-                      className={`${
-                        roundedCorners ? 'rounded-lg' : ''
-                      } ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 shadow-xl shadow-gray-900/70'
-                          : 'bg-white shadow-xl shadow-gray-300/70'
-                      } border-2 ${
-                        theme === 'dark' ? 'border-gray-500' : 'border-gray-300'
-                      } transition-colors duration-200`}
-                      style={{ width: panel.width, height: panel.height }}
-                    >
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removePanel(panel.id);
-                          }}
-                          className={`p-1.5 rounded-md ${
-                            theme === 'dark'
-                              ? 'bg-red-600 hover:bg-red-700'
-                              : 'bg-red-500 hover:bg-red-600'
-                          } text-white shadow-lg`}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                      <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
-                        <button
-                          onClick={toggleMoveMode}
-                          className={`p-1.5 rounded-md ${
-                            moveMode
-                              ? theme === 'dark'
-                                ? 'bg-blue-600'
-                                : 'bg-blue-500'
-                              : theme === 'dark'
-                                ? 'bg-gray-600'
-                                : 'bg-gray-300'
-                          } text-white shadow-lg cursor-move transition-colors`}
-                        >
-                          <Move size={14} />
-                        </button>
-                      </div>
-                      <div 
-                        className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDimensionClick(panel);
-                        }}
-                      >
-                        {editingPanel === panel.id ? (
-                          <div className="flex gap-1 items-center">
-                            <input
-                              type="number"
-                              value={newWidth}
-                              onChange={(e) => setNewWidth(e.target.value)}
-                              onKeyDown={(e) => handleKeyDown(e, panel.id)}
-                              className={`w-12 h-6 text-xs font-mono rounded px-1 ${
-                                theme === 'dark'
-                                  ? 'bg-gray-600 text-white border-gray-500'
-                                  : 'bg-white text-gray-900 border-gray-300'
-                              } border`}
-                              min="50"
-                              max="400"
-                            />
-                            <span className={`text-xs font-mono ${
-                              theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                            }`}>×</span>
-                            <input
-                              type="number"
-                              value={newHeight}
-                              onChange={(e) => setNewHeight(e.target.value)}
-                              onKeyDown={(e) => handleKeyDown(e, panel.id)}
-                              className={`w-12 h-6 text-xs font-mono rounded px-1 ${
-                                theme === 'dark'
-                                  ? 'bg-gray-600 text-white border-gray-500'
-                                  : 'bg-white text-gray-900 border-gray-300'
-                              } border`}
-                              min="50"
-                              max="400"
-                            />
-                          </div>
-                        ) : (
-                          <span className={`text-xs font-mono ${
-                            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                          }`}>
-                            {panel.width} × {panel.height}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Draggable>
-            ))}
           </div>
         </div>
       </div>
