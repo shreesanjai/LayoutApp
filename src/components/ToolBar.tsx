@@ -176,6 +176,7 @@ export default function Toolbar({
   customGradientColors,
 }: ToolbarProps) {
   const { theme, toggleTheme } = useTheme();
+  const { viewMode } = useViewMode();
   const [activeTab, setActiveTab] = useState<RibbonTab>("home");
   const [selectedShape, setSelectedShape] = useState<PanelShape>("rectangle");
   const [showShapeDropdown, setShowShapeDropdown] = useState(false);
