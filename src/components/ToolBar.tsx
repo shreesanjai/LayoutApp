@@ -750,12 +750,18 @@ export default function Toolbar({
               type="number"
               value={widthInput}
               onChange={(e) => setWidthInput(e.target.value)}
-              className={`w-20 h-8 text-sm font-mono rounded-md border ${isDark
+              disabled={viewMode === "mobile" || viewMode === "desktop"}
+              className={`w-20 h-8 text-sm font-mono rounded-md border ${
+                viewMode === "mobile" || viewMode === "desktop"
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              } ${isDark
                 ? "bg-gray-700 border-gray-600 text-gray-200"
                 : "bg-white border-gray-300 text-gray-800"
                 } px-2 focus:ring-2 focus:ring-blue-400 focus:border-blue-400`}
               min="200"
               max="1200"
+              title={viewMode === "mobile" || viewMode === "desktop" ? "Use device presets in View Mode" : ""}
             />
           </div>
           <div className="flex flex-col">
@@ -766,12 +772,18 @@ export default function Toolbar({
               type="number"
               value={heightInput}
               onChange={(e) => setHeightInput(e.target.value)}
-              className={`w-20 h-8 text-sm font-mono rounded-md border ${isDark
+              disabled={viewMode === "mobile" || viewMode === "desktop"}
+              className={`w-20 h-8 text-sm font-mono rounded-md border ${
+                viewMode === "mobile" || viewMode === "desktop"
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              } ${isDark
                 ? "bg-gray-700 border-gray-600 text-gray-200"
                 : "bg-white border-gray-300 text-gray-800"
                 } px-2 focus:ring-2 focus:ring-blue-400 focus:border-blue-400`}
               min="200"
               max="720"
+              title={viewMode === "mobile" || viewMode === "desktop" ? "Use device presets in View Mode" : ""}
             />
           </div>
         </div>
@@ -779,7 +791,7 @@ export default function Toolbar({
           className={`text-xs font-semibold ${isDark ? "text-gray-400" : "text-gray-700"
             } text-center`}
         >
-          Canvas Size
+          {viewMode === "mobile" || viewMode === "desktop" ? "Device Size" : "Canvas Size"}
         </div>
       </div>
 
