@@ -218,10 +218,15 @@ export default function Toolbar({
   };
 
   useEffect(() => {
-    setWidthInput(widthInput.toString());
-    setHeightInput(heightInput.toString());
-    onCanvasDimensionSubmit(widthInput, heightInput);
-  }, [widthInput, heightInput]);
+    setWidthInput(canvasWidth.toString());
+    setHeightInput(canvasHeight.toString());
+  }, [canvasWidth, canvasHeight]);
+
+  useEffect(() => {
+    if (viewMode !== "mobile" && viewMode !== "desktop") {
+      onCanvasDimensionSubmit(widthInput, heightInput);
+    }
+  }, [widthInput, heightInput, viewMode, onCanvasDimensionSubmit]);
 
   const RibbonButton = ({
     onClick,
