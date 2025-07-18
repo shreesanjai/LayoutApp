@@ -272,14 +272,25 @@ export default function DrawingCanvas() {
         />
       </div>
       <div
-        className="flex-grow flex justify-center  overflow-auto hide-scrollbar px-4 pt-5 pb-11
-    dark:bg-gray-900 bg-gray-50"
+        className={`flex-grow flex justify-center overflow-auto hide-scrollbar px-4 pt-5 pb-11 transition-all duration-300 ${
+          viewMode === "mobile" ? "bg-gray-100 dark:bg-gray-800" : "dark:bg-gray-900 bg-gray-50"
+        }`}
       >
         <div className="relative">
+          {/* Device Frame for Mobile View */}
+          {viewMode === "mobile" && (
+            <div className="absolute -inset-4 bg-gray-800 rounded-3xl shadow-2xl border-8 border-gray-700">
+              <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-20 h-1 bg-gray-600 rounded-full"></div>
+              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gray-600 rounded-full"></div>
+            </div>
+          )}
+          
           <div
-            className={`relative border-2 canvas-container transition-colors duration-200 overflow-hidden ${
+            className={`relative border-2 canvas-container transition-all duration-300 overflow-hidden ${
               roundedCorners ? "rounded-xl" : ""
-            } ${showGrid ? "grid-background" : ""}`}
+            } ${showGrid ? "grid-background" : ""} ${
+              viewMode === "mobile" ? "shadow-lg" : ""
+            }`}
             style={{
               width: canvasWidth,
               height: canvasHeight,
@@ -352,9 +363,24 @@ export default function DrawingCanvas() {
                 className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center`}
                 style={{ color: canvasFgColor }}
               >
-                Click the insert tab to add a panel.
+                <div className="flex flex-col items-center gap-2">
+                  <div className="text-2xl">{currentDevice.icon}</div>
+                  <div>Click the insert tab to add a panel.</div>
+                  <div className="text-sm opacity-70">
+                    {viewMode === "mobile" ? "Mobile" : "Desktop"} View ({currentDevice.name})
+                  </div>
+                </div>
               </div>
             )}
+          </div>
+          
+          {/* View Mode Indicator */}
+          <div className="absolute top-2 right-2 flex items-center gap-2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+            <span>{currentDevice.icon}</span>
+            <span>{currentDevice.name}</span>
+            <span className="text-xs opacity-70">
+              {canvasWidth}×{canvasHeight}
+            </span>
           </div>
         </div>
       </div>
