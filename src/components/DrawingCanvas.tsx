@@ -15,6 +15,7 @@ import { usePanelDrag } from "../hooks/usePanelDrag";
 
 export default function DrawingCanvas() {
   const { theme } = useTheme();
+  const { viewMode, currentDevice } = useViewMode();
   const { state, actions } = useCanvasState();
   const {
     panels,
@@ -35,6 +36,13 @@ export default function DrawingCanvas() {
   const [angle, setAngle] = useState(90);
   const [gradientType, setGradientType] = useState("custom");
   const [includeTextInExport, setIncludeTextInExport] = useState(true);
+
+  // Sync canvas dimensions with selected device
+  useEffect(() => {
+    if (currentDevice) {
+      actions.setCanvasDimensions(currentDevice.width, currentDevice.height);
+    }
+  }, [currentDevice, actions]);
 
   const { guidelines, showGuidelines, hideGuidelines } = useGridlines({
     canvasWidth,
