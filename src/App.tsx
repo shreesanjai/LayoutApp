@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { ThemeProvider } from "./context/ThemeContext";
+import { ViewModeProvider } from "./context/ViewModeContext";
 import DrawingCanvas from "./components/DrawingCanvas";
 
 function App() {
@@ -18,7 +19,9 @@ function App() {
 
   return (
     <ThemeProvider>
-      <DrawingCanvas />
+      <ViewModeProvider>
+        <DrawingCanvas />
+      </ViewModeProvider>
     </ThemeProvider>
   );
 }
