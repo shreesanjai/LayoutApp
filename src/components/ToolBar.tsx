@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTheme } from "../context/ThemeContext";
+import { useViewMode } from "../context/ViewModeContext";
 import ColorPicker from "./ColorPicker";
 import ViewModeToggle from "./ViewModeToggle";
 
