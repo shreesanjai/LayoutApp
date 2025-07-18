@@ -5,6 +5,7 @@ import {
 import { useEffect, useState } from "react";
 import { useTheme } from "../context/ThemeContext";
 import ColorPicker from "./ColorPicker";
+import ViewModeToggle from "./ViewModeToggle";
 
 type PanelShape =
   | "square"
