@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTheme } from "../context/ThemeContext";
+import { useViewMode } from "../context/ViewModeContext";
 import html2canvas from "html2canvas";
 import { CanvasConfig, Panel } from "../types/canvas";
 import Toolbar from "./ToolBar";
