@@ -572,6 +572,14 @@ export default function Toolbar({
 
   const renderDesignTab = () => (
     <div className="flex items-center gap-2 flex-wrap">
+      {/* View Mode Toggle */}
+      <div className="flex flex-col">
+        <ViewModeToggle isDark={isDark} />
+      </div>
+
+      {/* Separator */}
+      <div className={`h-16 w-px ${isDark ? "bg-gray-700" : "bg-gray-200"}`} />
+
       {/* Colors Group */}
       <div className="flex flex-col">
         <div className="flex items-start gap-3 mb-2">
