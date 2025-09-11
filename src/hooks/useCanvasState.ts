@@ -32,6 +32,10 @@ type CanvasAction =
       payload: { bgColor?: string; fgColor?: string };
     }
   | {
+      type: "SET_CANVAS_BG_IMAGE";
+      payload: { bgImage:string | null; }
+    }
+  | {
       type: "SET_CANVAS_OPTIONS";
       payload: { roundedCorners?: boolean; showGrid?: boolean };
     }
@@ -59,6 +63,7 @@ const initialState: ExtendedCanvasState = {
   canvasWidth: 1100,
   canvasHeight: 450,
   canvasBgColor: "#ffffff",
+  canvasBgImage:null,
   canvasFgColor: "#000000",
   roundedCorners: true,
   showGrid: false,
@@ -290,6 +295,11 @@ const canvasReducer = (
         ? saveStateToHistory(state, updatedState)
         : updatedState;
     }
+    case "SET_CANVAS_BG_IMAGE":
+       return saveStateToHistory(state, {
+        ...state,
+          canvasBgImage: action.payload.bgImage,
+      });
     case "SET_CANVAS_COLORS":
       return saveStateToHistory(state, {
         ...state,
@@ -333,6 +343,7 @@ const canvasReducer = (
         canvasHeight: action.payload.canvasHeight || 720,
         canvasBgColor: action.payload.canvasBgColor || "#ffffff",
         canvasFgColor: action.payload.canvasFgColor || "#000000",
+        canvasBgImage: action.payload.canvasBgImage || null,
         roundedCorners:
           action.payload.roundedCorners !== undefined
             ? action.payload.roundedCorners
@@ -463,6 +474,8 @@ export const useCanvasState = () => {
       }),
     setCanvasColors: (bgColor?: string, fgColor?: string) =>
       dispatch({ type: "SET_CANVAS_COLORS", payload: { bgColor, fgColor } }),
+    setCanvasImage: (bgImage : string|null) =>
+      dispatch({ type: "SET_CANVAS_BG_IMAGE", payload: { bgImage } }),
     setCanvasOptions: (roundedCorners?: boolean, showGrid?: boolean) =>
       dispatch({
         type: "SET_CANVAS_OPTIONS",

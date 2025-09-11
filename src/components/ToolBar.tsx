@@ -5,6 +5,7 @@ import {
 import { useEffect, useState } from "react";
 import { useTheme } from "../context/ThemeContext";
 import ColorPicker from "./ColorPicker";
+import BackgroundPopover from "./BackgroundPopOver";
 
 type PanelShape =
   | "square"
@@ -40,6 +41,7 @@ interface ToolbarProps {
   onCanvasDimensionSubmit: (width: string, height: string) => void;
   onBgColorChange: (color: string) => void;
   onFgColorChange: (color: string) => void;
+  onBgImageChange: (bgImage: string|null) => void;
   onRoundedCornersToggle: () => void;
   onShowGridToggle: () => void;
   canUndo: boolean;
@@ -152,6 +154,7 @@ export default function Toolbar({
   onCanvasDimensionSubmit,
   hasShapes,
   onFgColorChange,
+  onBgImageChange,
   onRoundedCornersToggle,
   onShowGridToggle,
   canUndo,
@@ -610,7 +613,8 @@ export default function Toolbar({
             </div>
 
             {useGradient ? (
-              <>
+              <div className="flex flex-row items-center">
+              <div>
                 <div
                   className={`flex gap-2 flex-wrap max-w-[220px] ${gradientType !== "custom" ? "mt-3" : ""
                     }`}
@@ -618,7 +622,7 @@ export default function Toolbar({
                   {predefinedGradients.map((preset, idx) => (
                     <div
                       key={idx}
-                      className={`w-5 h-5 rounded cursor-pointer border-2 transition-all duration-150 ${gradientType === preset.value && !isCustom
+                      className={`w-5 h-5 rounded cursor-pointer border-2 transition-all mb-1 duration-150 ${gradientType === preset.value && !isCustom
                         ? "border-blue-600"
                         : isDark
                           ? "border-gray-600"
@@ -711,7 +715,9 @@ export default function Toolbar({
                     </div>
                   </div>
                 )}
-              </>
+              </div>
+                <div className="ml-2"><BackgroundPopover onBgImageChange={onBgImageChange} /></div>
+              </div>
             ) : (
               <div className="mt-2">
                 <ColorPicker

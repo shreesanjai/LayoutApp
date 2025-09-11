@@ -61,6 +61,7 @@ export interface CanvasConfig {
   canvasHeight: number;
   canvasBgColor: string;
   canvasFgColor: string;
+  canvasBgImage:string | null;
   roundedCorners: boolean;
   showGrid: boolean;
   useGradient?: boolean;
@@ -96,6 +97,7 @@ export interface CanvasState {
   canvasWidth: number;
   canvasHeight: number;
   canvasBgColor: string;
+  canvasBgImage:string | null;
   canvasFgColor: string;
   roundedCorners: boolean;
   showGrid: boolean;

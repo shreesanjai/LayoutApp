@@ -21,6 +21,7 @@ export default function DrawingCanvas() {
     canvasWidth,
     canvasHeight,
     canvasBgColor,
+    canvasBgImage,
     canvasFgColor,
     roundedCorners,
     showGrid,
@@ -65,9 +66,11 @@ export default function DrawingCanvas() {
 
   const getBackgroundStyle = () => {
     if (useGradient) {
-      return gradientType === "custom"
-        ? `linear-gradient(${angle}deg,  ${customGradientColors.join(", ")})`
-        : gradientType;
+      return canvasBgImage !== null 
+        ? `url(${canvasBgImage})` : 
+        gradientType === "custom" 
+          ? `linear-gradient(${angle}deg,  ${customGradientColors.join(", ")})`
+          : gradientType;
     }
     return `linear-gradient(${canvasBgColor}, ${canvasBgColor})`;
   };
@@ -140,6 +143,7 @@ export default function DrawingCanvas() {
       canvasHeight,
       canvasBgColor,
       canvasFgColor,
+      canvasBgImage,
       roundedCorners,
       showGrid,
       useGradient,
@@ -188,6 +192,10 @@ export default function DrawingCanvas() {
   const handleBgColorChange = (color: string) => {
     actions.setCanvasColors(color);
   };
+
+  const handleBgImageChange = (bgImage: string|null) => {
+    actions.setCanvasImage(bgImage);
+  }
 
   const handleFgColorChange = (color: string) => {
     actions.setCanvasColors(undefined, color);
@@ -238,6 +246,7 @@ export default function DrawingCanvas() {
           showGrid={showGrid}
           onCanvasDimensionSubmit={handleCanvasDimensionSubmit}
           onBgColorChange={handleBgColorChange}
+          onBgImageChange={handleBgImageChange}
           onFgColorChange={handleFgColorChange}
           onRoundedCornersToggle={handleRoundedCornersToggle}
           onShowGridToggle={handleShowGridToggle}
@@ -283,7 +292,9 @@ export default function DrawingCanvas() {
                     ${getBackgroundStyle()}
                   `
                 : getBackgroundStyle(),
-              backgroundSize: showGrid ? "20px 20px" : "auto",
+              backgroundSize: showGrid ? "20px 20px" : getBackgroundStyle().startsWith("url") ? "cover" :"auto",
+              backgroundRepeat: showGrid ? "repeat":"no-repeat",
+              backgroundPosition:"center"
             }}
           >
             {/* Render guidelines using the separate component */}
