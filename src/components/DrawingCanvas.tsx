@@ -119,6 +119,7 @@ export default function DrawingCanvas() {
         backgroundColor: canvasBgColor,
         scale: 2,
         logging: false,
+        useCORS:true
       }).then((canvas: HTMLCanvasElement) => {
         // Restore hidden elements
         hiddenElements.forEach(({ element, originalDisplay }) => {
@@ -132,6 +133,13 @@ export default function DrawingCanvas() {
           .replace(/:/g, "-")}.png`;
         link.href = canvas.toDataURL("image/png");
         link.click();
+      }).catch((err) => {
+        console.error("html2canvas Error : "+err);
+        
+        hiddenElements.forEach(({ element, originalDisplay }) => {
+          element.style.display = originalDisplay;
+        });
+        
       });
     }
   };
@@ -241,6 +249,7 @@ export default function DrawingCanvas() {
           canvasWidth={canvasWidth}
           canvasHeight={canvasHeight}
           canvasBgColor={canvasBgColor}
+          canvasBgImage={canvasBgImage}
           canvasFgColor={canvasFgColor}
           roundedCorners={roundedCorners}
           showGrid={showGrid}

@@ -35,6 +35,7 @@ interface ToolbarProps {
   canvasWidth: number;
   canvasHeight: number;
   canvasBgColor: string;
+  canvasBgImage: string | null;
   canvasFgColor: string;
   roundedCorners: boolean;
   showGrid: boolean;
@@ -148,6 +149,7 @@ export default function Toolbar({
   onRedo,
   canvasWidth,
   canvasHeight,
+  canvasBgImage,
   canvasFgColor,
   roundedCorners,
   showGrid,
@@ -716,7 +718,7 @@ export default function Toolbar({
                   </div>
                 )}
               </div>
-                <div className="ml-2"><BackgroundPopover onBgImageChange={onBgImageChange} /></div>
+                <div className="ml-2"><BackgroundPopover onBgImageChange={onBgImageChange} canvasBgImage={canvasBgImage}/></div>
               </div>
             ) : (
               <div className="mt-2">
